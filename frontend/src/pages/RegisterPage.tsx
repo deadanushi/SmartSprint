@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AlertModal from '../components/AlertModal';
+import { createUser } from '../services/userService';
 
 interface Role {
   id: string;
@@ -27,12 +28,16 @@ const RegisterPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [companySearch, setCompanySearch] = useState('');
+  const [createdCompany, setCreatedCompany] = useState(false);
+  const [newCompanyIndustry, setNewCompanyIndustry] = useState('Other');
   const navigate = useNavigate();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalMsg, setModalMsg] = useState<React.ReactNode>('');
   const [modalVariant, setModalVariant] = useState<'info' | 'success' | 'error' | 'warning'>('info');
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const roles: Role[] = [
     { id: 'project-manager', name: 'Project Manager', icon: 'supervisor_account' },
@@ -49,7 +54,7 @@ const RegisterPage: React.FC = () => {
     { id: 'other', name: 'Other', icon: 'person' },
   ];
 
-  const companies: Company[] = [
+  const companies: Company[] = useMemo<Company[]>(() => ([
     { id: '1', name: 'Google', industry: 'Technology' },
     { id: '2', name: 'Microsoft', industry: 'Technology' },
     { id: '3', name: 'Apple', industry: 'Technology' },
@@ -62,62 +67,81 @@ const RegisterPage: React.FC = () => {
     { id: '10', name: 'Uber', industry: 'Transportation' },
     { id: '11', name: 'Slack', industry: 'Communication' },
     { id: '12', name: 'Zoom', industry: 'Video Conferencing' },
-  ];
+  ]), []);
 
-  const filteredCompanies = companies.filter(company =>
-    company.name.toLowerCase().includes(companySearch.toLowerCase()) ||
-    company.industry.toLowerCase().includes(companySearch.toLowerCase())
-  );
+  const filteredCompanies = useMemo(() => (
+    companies.filter(company =>
+      company.name.toLowerCase().includes(companySearch.toLowerCase()) ||
+      company.industry.toLowerCase().includes(companySearch.toLowerCase())
+    )
+  ), [companySearch, companies]);
+
+  const hasExactCompany = useMemo(() => {
+    const term = companySearch.trim().toLowerCase();
+    if (!term) return false;
+    return companies.some(c => c.name.toLowerCase() === term);
+  }, [companySearch, companies]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => {
-    if (step === 1) {
-      if (formData.firstName && formData.lastName && formData.email && formData.password && formData.confirmPassword) {
-        if (formData.password !== formData.confirmPassword) {
-          setModalTitle('Passwords do not match');
-          setModalMsg('Please make sure both password fields are identical.');
-          setModalVariant('error');
-          setModalOpen(true);
-          return;
-        }
-        setStep(2);
-      } else {
-        setModalTitle('Missing information');
-        setModalMsg('Please fill out all fields to continue.');
-        setModalVariant('warning');
-        setModalOpen(true);
-      }
-    } else if (step === 2) {
-      if (formData.role) {
-        setStep(3);
-      } else {
-        setModalTitle('Select a role');
-        setModalMsg('Please choose your primary role to continue.');
-        setModalVariant('info');
-        setModalOpen(true);
-      }
+  const validateEmail = (email: string) => /\S+@\S+\.\S+/.test(email);
+
+  const validateStep1 = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
+    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!validateEmail(formData.email)) newErrors.email = 'Enter a valid email address';
+    if (!formData.password) newErrors.password = 'Password is required';
+    else if (formData.password.length < 8) newErrors.password = 'Password must be at least 8 characters';
+    if (!formData.confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
+    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+    setErrors(prev => ({ ...prev, ...newErrors }));
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep2 = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.role) newErrors.role = 'Please select your role';
+    setErrors(prev => ({ ...prev, ...newErrors }));
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateStep3 = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.company) newErrors.company = 'Please select your company';
+    if (createdCompany) {
+      if (!formData.company.trim()) newErrors.company = 'Enter a company name';
+      if (!newCompanyIndustry) newErrors.companyIndustry = 'Select an industry';
     }
+    setErrors(prev => ({ ...prev, ...newErrors }));
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNext = () => {
+    if (step === 1 && validateStep1()) setStep(2);
+    else if (step === 2 && validateStep2()) setStep(3);
+  };
+
+  const handlePrev = () => {
+    setErrors({});
+    setStep(prev => Math.max(1, prev - 1));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (step === 3 && formData.company) {
+    if (step === 3 && validateStep3()) {
       setIsLoading(true);
       try {
-        const res = await fetch('http://localhost:8000/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            role: formData.role || 'member',
-            avatar_url: null
-          })
+        const res = await createUser({
+          email: formData.email,
+          password: formData.password,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          role: formData.role || 'member',
+          avatar_url: null,
         });
 
         if (!res.ok) {
@@ -128,7 +152,7 @@ const RegisterPage: React.FC = () => {
           setModalVariant('error');
           setModalOpen(true);
         } else {
-          const data = await res.json();
+          await res.json();
           setModalTitle('Account created');
           setModalMsg('Your account has been created successfully. You can now sign in.');
           setModalVariant('success');
@@ -165,23 +189,7 @@ const RegisterPage: React.FC = () => {
     border: '1px solid #E5E7EB',
   };
 
-  const logoStyles: React.CSSProperties = {
-    textAlign: 'center',
-    marginBottom: '32px',
-  };
-
-  const logoTextStyles: React.CSSProperties = {
-    fontSize: '32px',
-    fontWeight: '700',
-    color: '#0056D2',
-    margin: '0 0 8px 0',
-  };
-
-  const logoSubtextStyles: React.CSSProperties = {
-    fontSize: '14px',
-    color: '#6B7280',
-    margin: '0',
-  };
+  
 
   const stepIndicatorStyles: React.CSSProperties = {
     display: 'flex',
@@ -200,7 +208,8 @@ const RegisterPage: React.FC = () => {
     fontSize: '14px',
     fontWeight: '600',
     background: '#F3F4F6',
-    color: '#9CA3AF',
+    color: '#6B7280',
+    border: '1px solid #E5E7EB',
   };
 
   const activeStepStyles: React.CSSProperties = {
@@ -213,6 +222,20 @@ const RegisterPage: React.FC = () => {
     ...stepStyles,
     background: '#10B981',
     color: 'white',
+  };
+
+  const errorTextStyles: React.CSSProperties = {
+    color: '#DC2626',
+    fontSize: '12px',
+    marginTop: '4px',
+  };
+
+  const navRowStyles: React.CSSProperties = {
+    display: 'flex',
+    gap: '12px',
+    justifyContent: 'space-between',
+    marginTop: '8px',
+    marginBottom: '24px',
   };
 
   const titleStyles: React.CSSProperties = {
@@ -269,7 +292,7 @@ const RegisterPage: React.FC = () => {
     color: 'white',
     border: 'none',
     borderRadius: '8px',
-    padding: '14px',
+    padding: '16px',
     fontSize: '15px',
     fontWeight: '600',
     cursor: 'pointer',
@@ -284,6 +307,13 @@ const RegisterPage: React.FC = () => {
     ...buttonStyles,
     background: '#9CA3AF',
     cursor: 'not-allowed',
+  };
+
+  const secondaryButtonStyles: React.CSSProperties = {
+    ...buttonStyles,
+    background: '#F3F4F6',
+    color: '#111827',
+    border: '1px solid #E5E7EB',
   };
 
   const roleGridStyles: React.CSSProperties = {
@@ -333,13 +363,14 @@ const RegisterPage: React.FC = () => {
 
   const dropdownStyles: React.CSSProperties = {
     position: 'relative',
-    marginTop: '16px',
+    marginTop: '20px',
   };
 
   const dropdownInputStyles: React.CSSProperties = {
     ...inputStyles,
     width: '100%',
     boxSizing: 'border-box',
+    padding: '14px 18px',
   };
 
   const dropdownListStyles: React.CSSProperties = {
@@ -349,16 +380,17 @@ const RegisterPage: React.FC = () => {
     right: 0,
     background: '#FFFFFF',
     border: '1px solid #E5E7EB',
-    borderRadius: '8px',
+    borderRadius: '10px',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
     maxHeight: '200px',
     overflowY: 'auto',
     zIndex: 10,
-    marginTop: '4px',
+    marginTop: '6px',
+    padding: '8px 0',
   };
 
   const dropdownItemStyles: React.CSSProperties = {
-    padding: '12px 16px',
+    padding: '14px 18px',
     cursor: 'pointer',
     borderBottom: '1px solid #F3F4F6',
     fontSize: '14px',
@@ -397,6 +429,7 @@ const RegisterPage: React.FC = () => {
               style={inputStyles}
               required
             />
+            {errors.firstName && <div style={errorTextStyles}>{errors.firstName}</div>}
           </div>
           <div style={inputGroupStyles}>
             <label style={labelStyles}>Last name</label>
@@ -408,6 +441,7 @@ const RegisterPage: React.FC = () => {
               style={inputStyles}
               required
             />
+            {errors.lastName && <div style={errorTextStyles}>{errors.lastName}</div>}
           </div>
         </div>
 
@@ -421,6 +455,7 @@ const RegisterPage: React.FC = () => {
             style={inputStyles}
             required
           />
+          {errors.email && <div style={errorTextStyles}>{errors.email}</div>}
         </div>
 
         <div style={rowStyles}>
@@ -434,6 +469,7 @@ const RegisterPage: React.FC = () => {
               style={inputStyles}
               required
             />
+            {errors.password && <div style={errorTextStyles}>{errors.password}</div>}
           </div>
           <div style={inputGroupStyles}>
             <label style={labelStyles}>Confirm password</label>
@@ -445,22 +481,25 @@ const RegisterPage: React.FC = () => {
               style={inputStyles}
               required
             />
+            {errors.confirmPassword && <div style={errorTextStyles}>{errors.confirmPassword}</div>}
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleNext}
-          style={buttonStyles}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#0043A0';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#0056D2';
-          }}
-        >
-          Continue
-        </button>
+        <div style={navRowStyles}>
+          <button
+            type="button"
+            onClick={handleNext}
+            style={buttonStyles}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#0043A0';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#0056D2';
+            }}
+          >
+            Continue
+          </button>
+        </div>
       </form>
     </>
   );
@@ -501,25 +540,36 @@ const RegisterPage: React.FC = () => {
           </div>
         ))}
       </div>
+      {errors.role && <div style={{ ...errorTextStyles, marginTop: '8px' }}>{errors.role}</div>}
 
-      <button
-        type="button"
-        onClick={handleNext}
-        style={!formData.role ? disabledButtonStyles : buttonStyles}
-        disabled={!formData.role}
-        onMouseEnter={(e) => {
-          if (formData.role) {
+      <div style={navRowStyles}>
+        <button
+          type="button"
+          onClick={handlePrev}
+          style={secondaryButtonStyles}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#E5E7EB';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#F3F4F6';
+          }}
+        >
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={handleNext}
+          style={buttonStyles}
+          onMouseEnter={(e) => {
             e.currentTarget.style.background = '#0043A0';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (formData.role) {
+          }}
+          onMouseLeave={(e) => {
             e.currentTarget.style.background = '#0056D2';
-          }
-        }}
-      >
-        Continue
-      </button>
+          }}
+        >
+          Continue
+        </button>
+      </div>
     </>
   );
 
@@ -545,6 +595,7 @@ const RegisterPage: React.FC = () => {
                 onClick={() => {
                   handleInputChange('company', company.name);
                   setCompanySearch('');
+                  setCreatedCompany(false);
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = '#F9FAFB';
@@ -557,6 +608,22 @@ const RegisterPage: React.FC = () => {
                 <div style={{ fontSize: '12px', color: '#6B7280' }}>{company.industry}</div>
               </div>
             ))}
+            {!hasExactCompany && companySearch.trim() && (
+              <div
+                style={{ ...dropdownItemStyles, display: 'flex', alignItems: 'center', gap: '8px', background: '#F8FAFF' }}
+                onClick={() => {
+                  const name = companySearch.trim();
+                  handleInputChange('company', name);
+                  setCreatedCompany(true);
+                  setCompanySearch('');
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#EFF6FF'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#F8FAFF'; }}
+              >
+                <span className="material-icons" style={{ fontSize: '18px', color: '#2563EB' }}>add_circle</span>
+                <span>Create "{companySearch.trim()}"</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -569,37 +636,101 @@ const RegisterPage: React.FC = () => {
           borderRadius: '8px',
           marginTop: '16px',
         }}>
-          <div style={{ fontSize: '14px', fontWeight: '500', color: '#0056D2' }}>
-            Selected: {formData.company}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+            <div style={{ fontSize: '14px', fontWeight: '500', color: '#0056D2' }}>
+              Selected: {formData.company}
+            </div>
+            <button
+              type="button"
+              style={{
+                background: 'transparent',
+                color: '#0056D2',
+                border: '1px solid #93C5FD',
+                borderRadius: '8px',
+                padding: '6px 10px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+              onClick={() => { handleInputChange('company', ''); setCreatedCompany(false); }}
+            >
+              Change
+            </button>
           </div>
+          {createdCompany && (
+            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '12px', color: '#1D4ED8', fontWeight: 700 }}>New company will be created</span>
+              <select
+                value={newCompanyIndustry}
+                onChange={(e) => setNewCompanyIndustry(e.target.value)}
+                style={{
+                  padding: '8px 10px',
+                  border: '1px solid #93C5FD',
+                  borderRadius: '8px',
+                  background: 'white',
+                  fontSize: '12px',
+                  color: '#1F2937',
+                }}
+              >
+                <option value="Technology">Technology</option>
+                <option value="E-commerce">E-commerce</option>
+                <option value="Social Media">Social Media</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Automotive">Automotive</option>
+                <option value="Music">Music</option>
+                <option value="Travel">Travel</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Communication">Communication</option>
+                <option value="Video Conferencing">Video Conferencing</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          )}
         </div>
       )}
+      {errors.company && <div style={{ ...errorTextStyles, marginTop: '8px' }}>{errors.company}</div>}
+      {errors.companyIndustry && <div style={{ ...errorTextStyles, marginTop: '4px' }}>{errors.companyIndustry}</div>}
 
       <form style={formStyles} onSubmit={handleSubmit}>
-        <button
-          type="submit"
-          style={!formData.company || isLoading ? disabledButtonStyles : buttonStyles}
-          disabled={!formData.company || isLoading}
-          onMouseEnter={(e) => {
-            if (formData.company && !isLoading) {
-              e.currentTarget.style.background = '#0043A0';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (formData.company && !isLoading) {
-              e.currentTarget.style.background = '#0056D2';
-            }
-          }}
-        >
-          {isLoading ? (
-            <>
-              <span className="material-icons" style={{ fontSize: '16px' }}>hourglass_empty</span>
-              Creating account...
-            </>
-          ) : (
-            'Create account'
-          )}
-        </button>
+        <div style={navRowStyles}>
+          <button
+            type="button"
+            onClick={handlePrev}
+            style={secondaryButtonStyles}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#E5E7EB';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#F3F4F6';
+            }}
+          >
+            Back
+          </button>
+          <button
+            type="submit"
+            style={isLoading ? disabledButtonStyles : buttonStyles}
+            disabled={isLoading}
+            onMouseEnter={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.background = '#0043A0';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.background = '#0056D2';
+              }
+            }}
+          >
+            {isLoading ? (
+              <>
+                <span className="material-icons" style={{ fontSize: '16px' }}>hourglass_empty</span>
+                Creating account...
+              </>
+            ) : (
+              'Create account'
+            )}
+          </button>
+        </div>
       </form>
     </>
   );
@@ -607,11 +738,6 @@ const RegisterPage: React.FC = () => {
   return (
     <div style={pageStyles}>
       <div style={cardStyles}>
-        <div style={logoStyles}>
-          <h1 style={logoTextStyles}>TaskFlow</h1>
-          <p style={logoSubtextStyles}>Project Management Made Simple</p>
-        </div>
-
         <div style={stepIndicatorStyles}>
           {[1, 2, 3].map(stepNum => (
             <div
@@ -623,6 +749,7 @@ const RegisterPage: React.FC = () => {
                   ? activeStepStyles
                   : stepStyles
               }
+              title={stepNum === 1 ? 'Account' : stepNum === 2 ? 'Role' : 'Company'}
             >
               {stepNum < step ? '✓' : stepNum}
             </div>

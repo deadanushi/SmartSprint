@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 import AlertModal from '../components/AlertModal';
@@ -8,6 +8,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalMessage, setModalMessage] = useState<React.ReactNode>('');
@@ -18,8 +19,21 @@ const LoginPage: React.FC = () => {
 
   const from = location.state?.from?.pathname || '/tasks';
 
+  const validateEmail = (value: string) => /\S+@\S+\.\S+/.test(value);
+
+  const validateFields = () => {
+    const errs: Record<string, string> = {};
+    if (!email.trim()) errs.email = 'Email is required';
+    else if (!validateEmail(email)) errs.email = 'Enter a valid email address';
+    if (!password) errs.password = 'Password is required';
+    else if (password.length < 8) errs.password = 'Password must be at least 8 characters';
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateFields()) return;
     setIsLoading(true);
     setError('');
 
@@ -88,6 +102,12 @@ const LoginPage: React.FC = () => {
     rowGap: '14px',
   };
 
+  const errorTextStyles: React.CSSProperties = {
+    color: '#DC2626',
+    fontSize: '12px',
+    marginTop: '4px',
+  };
+
   const fullRow: React.CSSProperties = {
     gridColumn: '1 / -1',
   };
@@ -121,7 +141,7 @@ const LoginPage: React.FC = () => {
     color: 'white',
     border: 'none',
     borderRadius: '10px',
-    height: '46px',
+    height: '48px',
     fontSize: '15px',
     fontWeight: 800,
     cursor: 'pointer',
@@ -220,11 +240,19 @@ const LoginPage: React.FC = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: '' }));
+              }}
+              onBlur={() => {
+                if (!email.trim()) setFieldErrors(prev => ({ ...prev, email: 'Email is required' }));
+                else if (!validateEmail(email)) setFieldErrors(prev => ({ ...prev, email: 'Enter a valid email address' }));
+              }}
               placeholder="Enter your email"
               style={inputStyles}
               required
             />
+            {fieldErrors.email && <div style={errorTextStyles}>{fieldErrors.email}</div>}
           </div>
 
           <div style={{ ...inputGroupStyles, ...fullRow }}>
@@ -232,14 +260,22 @@ const LoginPage: React.FC = () => {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (fieldErrors.password) setFieldErrors(prev => ({ ...prev, password: '' }));
+              }}
+              onBlur={() => {
+                if (!password) setFieldErrors(prev => ({ ...prev, password: 'Password is required' }));
+                else if (password.length < 8) setFieldErrors(prev => ({ ...prev, password: 'Password must be at least 8 characters' }));
+              }}
               placeholder="Enter your password"
               style={inputStyles}
               required
             />
+            {fieldErrors.password && <div style={errorTextStyles}>{fieldErrors.password}</div>}
           </div>
 
-          <div style={fullRow}>
+          <div style={{ ...fullRow, marginTop: '6px' }}>
             <button
               type="submit"
               style={isLoading ? disabledButtonStyles : buttonStyles}
