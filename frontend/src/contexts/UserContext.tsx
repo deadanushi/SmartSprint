@@ -122,7 +122,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           lastName: u.last_name || u.lastName || '',
           email: u.email,
           role,
-          company: u.company || '',
+          company: u.company_name || u.company || '',
           permissions: getPermissionsForRole(role),
           avatar: (u.first_name?.[0] || '?') + (u.last_name?.[0] || ''),
           isActive: u.is_active !== false,

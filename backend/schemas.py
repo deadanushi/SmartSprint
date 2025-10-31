@@ -17,6 +17,9 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     role: str  # role_key from Role table
+    role_name: Optional[str] = None  # name from Role table
+    company_id: Optional[int] = None
+    company_name: Optional[str] = None  # name from Company table
     avatar_url: Optional[str]
     is_active: bool
     email_verified: bool

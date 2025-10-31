@@ -6,7 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import AppHeader from './components/AppHeader';
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import RegisterPage from './pages/register/RegisterPage';
 import TasksPage from './pages/TasksPage';
 import DashboardPage from './pages/DashboardPage';
 import InboxPage from './pages/InboxPage';

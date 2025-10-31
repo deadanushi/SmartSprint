@@ -49,6 +49,59 @@ body, html {
   border: 1px solid #E5E7EB;
 }
 
+/* Wizard step indicator */
+.step-indicator-wizard {
+  padding: 20px 0;
+}
+
+.step-item-wizard {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-circle-wizard {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  position: relative;
+  background: white;
+  border: 2px solid #E5E7EB;
+  color: #6B7280;
+}
+
+.step-circle-wizard.active {
+  background: #0056D2;
+  border-color: #0056D2;
+  color: white;
+}
+
+.step-label-wizard {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #6B7280;
+  margin-top: 8px;
+  text-align: center;
+  max-width: 90px;
+  line-height: 1.2;
+  transition: color 0.3s ease;
+}
+
+.step-label-wizard.active {
+  color: #0056D2;
+}
+
+.step-connector {
+  height: 2px;
+  background: #E5E7EB;
+  z-index: 0;
+}
+
 /* Page background */
 .page-container {
   min-height: 100vh;

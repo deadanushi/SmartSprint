@@ -56,11 +56,11 @@ const Sidebar: React.FC = () => {
             <p className={clsx('sidebar-user-email')}>{currentUser?.email || 'user@example.com'}</p>
             <div className="d-flex align-items-center gap-2 mt-1" style={{ fontSize: '12px', color: '#64748B' }}>
               <span className="material-icons" style={{ fontSize: '14px', color: '#64748B' }}>business</span>
-              <span>{currentUser?.company || 'Company'}</span>
+              <span>{currentUser?.company && currentUser.company.trim() !== '' ? currentUser.company : '-'}</span>
             </div>
             <div className="d-flex align-items-center gap-2 mt-1" style={{ fontSize: '12px', color: '#64748B' }}>
               <span className="material-icons" style={{ fontSize: '14px', color: '#64748B' }}>badge</span>
-              <span>{getRoleDisplayName(currentUser?.role || 'other')}</span>
+              <span>{currentUser?.role ? getRoleDisplayName(currentUser.role) : '-'}</span>
             </div>
             <button 
               className="btn btn-sm w-100 mt-3 d-flex align-items-center justify-content-center gap-2" 

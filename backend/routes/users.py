@@ -114,9 +114,10 @@ def login_user(email: EmailStr, password: str, db: Session = Depends(get_db_depe
     """
     Temporary login via GET with query params (?email=...&password=...)
     Returns user if email & password match exactly.
-    Includes role_key from Role relationship.
+    Includes role_key from Role relationship and company info if available.
     """
     from sqlalchemy.orm import joinedload
+    from models import Company
     
     user = db.query(User).options(joinedload(User.role)).filter(User.email == email).first()
     if not user:
@@ -128,8 +129,15 @@ def login_user(email: EmailStr, password: str, db: Session = Depends(get_db_depe
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
 
-    # Get role_key from relationship (or 'other' as default)
+    # Get role_key and role_name from relationship (or 'other' as default)
     role_key = user.role.role_key if user.role else 'other'
+    role_name = user.role.name if user.role else None
+    
+    # Get company info if company_id exists
+    company_name = None
+    if user.company_id:
+        company = db.query(Company).filter(Company.id == user.company_id).first()
+        company_name = company.name if company else None
     
     return UserResponse(
         id=user.id,
@@ -137,6 +145,9 @@ def login_user(email: EmailStr, password: str, db: Session = Depends(get_db_depe
         first_name=user.first_name,
         last_name=user.last_name,
         role=role_key,
+        role_name=role_name,
+        company_id=user.company_id,
+        company_name=company_name,
         avatar_url=user.avatar_url,
         is_active=user.is_active,
         email_verified=user.email_verified,
