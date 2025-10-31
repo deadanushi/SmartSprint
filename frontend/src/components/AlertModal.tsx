@@ -1,4 +1,5 @@
 import React from 'react';
+import clsx from 'clsx';
 
 export type AlertVariant = 'info' | 'success' | 'error' | 'warning';
 
@@ -32,98 +33,48 @@ const AlertModal: React.FC<AlertModalProps> = ({
 
   const vs = variantStyles[variant];
 
-  const overlayStyles: React.CSSProperties = {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(2, 6, 23, 0.45)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  };
-
-  const modalStyles: React.CSSProperties = {
-    width: '100%',
-    maxWidth: '520px',
-    background: '#FFFFFF',
-    borderRadius: '14px',
-    boxShadow: '0 16px 48px rgba(2, 6, 23, 0.24)',
-    border: '1px solid #E5E7EB',
-  };
-
-  const headerStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '18px 20px 0 20px',
-  };
-
-  const iconStyles: React.CSSProperties = {
-    width: '36px',
-    height: '36px',
-    borderRadius: '10px',
-    background: vs.bg,
-    border: `1px solid ${vs.border}`,
-    color: vs.color,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-
-  const titleStyles: React.CSSProperties = {
-    margin: 0,
-    fontSize: '18px',
-    fontWeight: 800,
-    color: '#0F172A',
-  };
-
-  const bodyStyles: React.CSSProperties = {
-    padding: '12px 20px 0 20px',
-    color: '#334155',
-    fontSize: '14px',
-  };
-
-  const footerStyles: React.CSSProperties = {
-    padding: '18px 20px 20px 20px',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '10px',
-  };
-
-  const buttonBase: React.CSSProperties = {
-    height: '40px',
-    padding: '0 14px',
-    borderRadius: '10px',
-    fontSize: '14px',
-    fontWeight: 700,
-    cursor: 'pointer',
-    border: '1px solid #E5E7EB',
-    background: '#FFFFFF',
-    color: '#0F172A',
-  };
-
-  const confirmStyles: React.CSSProperties = {
-    ...buttonBase,
-    background: '#0B1324',
-    color: 'white',
-    border: 'none',
-  };
-
   return (
-    <div style={overlayStyles} onClick={onClose}>
-      <div style={modalStyles} onClick={(e) => e.stopPropagation()}>
-        <div style={headerStyles}>
-          <div style={iconStyles}>
-            <span className="material-icons" style={{ fontSize: '20px', lineHeight: 0 }}>{variantStyles[variant].icon}</span>
+    <div className="modal-overlay position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+         style={{ background: 'rgba(2, 6, 23, 0.45)', zIndex: 1000 }} 
+         onClick={onClose}>
+      <div className="modal-content bg-white rounded-3 shadow-lg border w-100" 
+           style={{ maxWidth: '520px' }} 
+           onClick={(e) => e.stopPropagation()}>
+        <div className="d-flex align-items-center gap-3 p-4 pb-0">
+          <div className="d-flex align-items-center justify-content-center rounded" 
+               style={{ 
+                 width: '36px', 
+                 height: '36px', 
+                 background: vs.bg, 
+                 border: `1px solid ${vs.border}`, 
+                 color: vs.color 
+               }}>
+            <span className="material-icons" style={{ fontSize: '20px', lineHeight: 0 }}>
+              {vs.icon}
+            </span>
           </div>
-          <h3 style={titleStyles}>{title}</h3>
+          <h3 className="mb-0 fw-bold" style={{ fontSize: '18px', color: '#0F172A' }}>{title}</h3>
         </div>
         {message && (
-          <div style={bodyStyles}>{message}</div>
+          <div className="px-4 pt-3" style={{ color: '#334155', fontSize: '14px' }}>
+            {message}
+          </div>
         )}
-        <div style={footerStyles}>
-          <button style={buttonBase} onClick={onClose}>Close</button>
-          <button style={confirmStyles} onClick={onConfirm || onClose}>{confirmText}</button>
+        <div className="d-flex justify-content-end gap-2 p-4">
+          <button 
+            className="btn btn-outline-secondary rounded" 
+            style={{ height: '40px', padding: '0 14px', fontSize: '14px', fontWeight: 700 }}
+            onClick={onClose}
+          >
+            Close
+          </button>
+          <button 
+            className="btn btn-dark rounded" 
+            style={{ height: '40px', padding: '0 14px', fontSize: '14px', fontWeight: 700 }}
+            onClick={onConfirm || onClose}
+          >
+            {confirmText}
+          </button>
         </div>
       </div>
     </div>
@@ -131,5 +82,3 @@ const AlertModal: React.FC<AlertModalProps> = ({
 };
 
 export default AlertModal;
-
-

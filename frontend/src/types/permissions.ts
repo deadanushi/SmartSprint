@@ -74,6 +74,7 @@ export interface User {
 }
 
 export type UserRole = 
+  | 'admin'
   | 'project-manager'
   | 'frontend-developer'
   | 'backend-developer'
@@ -89,6 +90,66 @@ export type UserRole =
 
 // Default permissions for each role
 export const ROLE_PERMISSIONS: Record<UserRole, Permissions> = {
+  'admin': {
+    // Admin has ALL permissions - Full Access
+    canCreateTasks: true,
+    canAssignTasks: true,
+    canEditTasks: true,
+    canDeleteTasks: true,
+    canChangeDeadlines: true,
+    canChangePriority: true,
+    canChangeStatus: true,
+    
+    // Task Visibility - All Tasks
+    canSeeAllTasks: true,
+    canSeeFETasks: true,
+    canSeeBETasks: true,
+    canSeeDesignTasks: true,
+    canSeeTestTasks: true,
+    canSeeDevOpsTasks: true,
+    canSeeDataTasks: true,
+    canSeeProductTasks: true,
+    
+    // Team Management - Full Access
+    canAddTeamMembers: true,
+    canRemoveTeamMembers: true,
+    canChangeUserRoles: true,
+    canViewAllTeamMembers: true,
+    
+    // Project Management - Full Access
+    canViewProjectOverview: true,
+    canEditProjectSettings: true,
+    canCreateSprints: true,
+    canManageSprints: true,
+    
+    // Documentation - Full Access
+    canUploadDocuments: true,
+    canDeleteDocuments: true,
+    canViewAllDocuments: true,
+    
+    // Meetings - Full Access
+    canCreateMeetings: true,
+    canEditMeetings: true,
+    canDeleteMeetings: true,
+    canViewAllMeetings: true,
+    
+    // Analytics - Full Access
+    canViewAllMetrics: true,
+    canGenerateReports: true,
+    canExportData: true,
+    
+    // Comments - Full Access
+    canAddComments: true,
+    canEditComments: true,
+    canDeleteComments: true,
+    canViewAllComments: true,
+    
+    // Special Permissions - Admin Access
+    canManagePermissions: true,
+    canAccessAdminPanel: true,
+    canViewUserActivity: true,
+  },
+  
   'project-manager': {
     // Task Management - Full Access
     canCreateTasks: true,
@@ -811,8 +872,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permissions> = {
 };
 
 // Helper function to get permissions for a role
-export const getPermissionsForRole = (role: UserRole): Permissions => {
-  return ROLE_PERMISSIONS[role];
+export const getPermissionsForRole = (role: UserRole | string): Permissions => {
+  // If role is not in UserRole, default to 'other' permissions
+  if (!(role in ROLE_PERMISSIONS)) {
+    return ROLE_PERMISSIONS['other'];
+  }
+  return ROLE_PERMISSIONS[role as UserRole];
 };
 
 // Helper function to check if user has specific permission

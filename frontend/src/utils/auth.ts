@@ -1,5 +1,5 @@
 import { jwtDecode } from 'jwt-decode';
-import { User, UserRole } from '../types/permissions';
+import { User, UserRole, getPermissionsForRole } from '../types/permissions';
 
 // Simple token interface for demo purposes
 interface TokenPayload {
@@ -203,16 +203,30 @@ export const getUserFromToken = (token: string): User | null => {
   const decoded = verifyToken(token);
   if (!decoded) return null;
   
-  return getUserById(decoded.userId);
+  const user = getUserById(decoded.userId);
+  if (!user) return null;
+  
+  // Ensure permissions are always set
+  if (!user.permissions) {
+    user.permissions = getPermissionsForRole(user.role);
+  }
+  
+  return user;
 };
 
 // Check if user has permission
 export const hasPermission = (user: User, permission: keyof User['permissions']): boolean => {
-  return user.permissions[permission];
+  if (!user || !user.permissions) return false;
+  return user.permissions[permission] === true;
 };
 
 // Check if user can access route
 export const canAccessRoute = (user: User, route: string): boolean => {
+  if (!user || !user.permissions) return false;
+  
+  // Admin has access to all routes
+  if (user.role === 'admin') return true;
+  
   // Define route permissions
   const routePermissions: { [key: string]: (keyof User['permissions'])[] } = {
     '/tasks': ['canSeeAllTasks', 'canSeeFETasks', 'canSeeBETasks', 'canSeeDesignTasks', 'canSeeTestTasks', 'canSeeDevOpsTasks', 'canSeeDataTasks', 'canSeeProductTasks'],

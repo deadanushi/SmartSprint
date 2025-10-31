@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { Link } from 'react-router-dom';
@@ -20,12 +21,6 @@ interface Task {
   tags: string[];
 }
 
-interface User {
-  id: string;
-  name: string;
-  avatar: string;
-}
-
 const BacklogPage: React.FC = () => {
   const { hasPermission, currentUser } = useUser();
   const { isCollapsed } = useSidebar();
@@ -34,335 +29,66 @@ const BacklogPage: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
 
-  // Mock backlog data - replace with actual API call
   const backlogTasks: Task[] = [
     {
-      id: 'backlog-1',
-      title: 'User Profile Management System',
+      id: 'backlog-1', title: 'User Profile Management System',
       description: 'Complete user profile management with avatar upload, preferences, and settings',
-      status: 'Backlog',
-      priority: 'High',
-      dueDate: '30 Apr 2024',
-      assignees: [],
-      comments: 0,
-      links: 0,
-      progress: '0/8',
-      type: 'frontend',
-      createdAt: '2024-01-10',
-      estimatedHours: 40,
+      status: 'Backlog', priority: 'High', dueDate: '30 Apr 2024', assignees: [], comments: 0, links: 0,
+      progress: '0/8', type: 'frontend', createdAt: '2024-01-10', estimatedHours: 40,
       tags: ['UI', 'User Management', 'File Upload']
     },
     {
-      id: 'backlog-2',
-      title: 'Advanced Search Functionality',
+      id: 'backlog-2', title: 'Advanced Search Functionality',
       description: 'Implement advanced search with filters, sorting, and pagination',
-      status: 'Backlog',
-      priority: 'Medium',
-      dueDate: '15 May 2024',
-      assignees: [],
-      comments: 0,
-      links: 0,
-      progress: '0/12',
-      type: 'backend',
-      createdAt: '2024-01-12',
-      estimatedHours: 60,
+      status: 'Backlog', priority: 'Medium', dueDate: '15 May 2024', assignees: [], comments: 0, links: 0,
+      progress: '0/12', type: 'backend', createdAt: '2024-01-12', estimatedHours: 60,
       tags: ['Search', 'API', 'Performance']
     },
     {
-      id: 'backlog-3',
-      title: 'Mobile App Redesign',
+      id: 'backlog-3', title: 'Mobile App Redesign',
       description: 'Complete redesign of mobile app with new UI/UX patterns',
-      status: 'Backlog',
-      priority: 'High',
-      dueDate: '20 May 2024',
-      assignees: [],
-      comments: 0,
-      links: 0,
-      progress: '0/15',
-      type: 'design',
-      createdAt: '2024-01-15',
-      estimatedHours: 80,
+      status: 'Backlog', priority: 'High', dueDate: '20 May 2024', assignees: [], comments: 0, links: 0,
+      progress: '0/15', type: 'design', createdAt: '2024-01-15', estimatedHours: 80,
       tags: ['Mobile', 'UI/UX', 'Design System']
     },
     {
-      id: 'backlog-4',
-      title: 'Automated Testing Suite',
+      id: 'backlog-4', title: 'Automated Testing Suite',
       description: 'Implement comprehensive automated testing for all components',
-      status: 'Backlog',
-      priority: 'Medium',
-      dueDate: '25 May 2024',
-      assignees: [],
-      comments: 0,
-      links: 0,
-      progress: '0/10',
-      type: 'test',
-      createdAt: '2024-01-18',
-      estimatedHours: 50,
+      status: 'Backlog', priority: 'Medium', dueDate: '25 May 2024', assignees: [], comments: 0, links: 0,
+      progress: '0/10', type: 'test', createdAt: '2024-01-18', estimatedHours: 50,
       tags: ['Testing', 'Automation', 'Quality Assurance']
     },
     {
-      id: 'backlog-5',
-      title: 'Microservices Architecture Migration',
+      id: 'backlog-5', title: 'Microservices Architecture Migration',
       description: 'Migrate monolithic architecture to microservices',
-      status: 'Backlog',
-      priority: 'High',
-      dueDate: '30 Jun 2024',
-      assignees: [],
-      comments: 0,
-      links: 0,
-      progress: '0/20',
-      type: 'devops',
-      createdAt: '2024-01-20',
-      estimatedHours: 120,
+      status: 'Backlog', priority: 'High', dueDate: '30 Jun 2024', assignees: [], comments: 0, links: 0,
+      progress: '0/20', type: 'devops', createdAt: '2024-01-20', estimatedHours: 120,
       tags: ['Architecture', 'DevOps', 'Scalability']
     },
     {
-      id: 'backlog-6',
-      title: 'Analytics Dashboard Enhancement',
+      id: 'backlog-6', title: 'Analytics Dashboard Enhancement',
       description: 'Enhance analytics dashboard with real-time data and custom reports',
-      status: 'Backlog',
-      priority: 'Low',
-      dueDate: '10 Jul 2024',
-      assignees: [],
-      comments: 0,
-      links: 0,
-      progress: '0/8',
-      type: 'data',
-      createdAt: '2024-01-22',
-      estimatedHours: 35,
+      status: 'Backlog', priority: 'Low', dueDate: '10 Jul 2024', assignees: [], comments: 0, links: 0,
+      progress: '0/8', type: 'data', createdAt: '2024-01-22', estimatedHours: 35,
       tags: ['Analytics', 'Dashboard', 'Real-time']
     }
   ];
 
-  const mockUsers: { [key: string]: User } = {
-    'user-1': { id: 'user-1', name: 'John Doe', avatar: 'JD' },
-    'user-2': { id: 'user-2', name: 'Jane Smith', avatar: 'JS' },
-    'user-3': { id: 'user-3', name: 'Mike Johnson', avatar: 'MJ' },
-    'user-4': { id: 'user-4', name: 'Sarah Wilson', avatar: 'SW' },
-    'user-5': { id: 'user-5', name: 'David Brown', avatar: 'DB' },
-    'user-6': { id: 'user-6', name: 'Lisa Davis', avatar: 'LD' }
-  };
-
-  // Check if user has permission to access backlog
   if (!hasPermission('canViewProjectOverview')) {
     return (
-      <div style={{
-        marginLeft: isCollapsed ? '80px' : '280px',
-        minHeight: '100vh',
-        background: '#F4F6F8',
-        padding: '32px',
-        transition: 'margin-left 0.3s ease',
-      }}>
-        <div style={{
-          background: '#FFFFFF',
-          borderRadius: '12px',
-          padding: '40px',
-          textAlign: 'center',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-        }}>
-          <span className="material-icons" style={{ fontSize: '64px', color: '#6B7280', marginBottom: '16px', display: 'block' }}>
-            lock
-          </span>
-          <h1 style={{ fontSize: '24px', fontWeight: '600', color: '#111827', margin: '0 0 8px 0' }}>
-            Access Denied
-          </h1>
-          <p style={{ fontSize: '16px', color: '#6B7280', margin: '0' }}>
-            Only Project Managers can access the Backlog view.
-          </p>
+      <div className="page-container" style={{ marginLeft: isCollapsed ? '80px' : '280px', transition: 'margin-left 0.3s ease' }}>
+        <div className="p-4">
+          <div className="bg-white rounded-3 p-5 text-center shadow-sm">
+            <span className="material-icons d-block mb-3" style={{ fontSize: '64px', color: '#6B7280' }}>lock</span>
+            <h1 className="h4 fw-semibold text-dark mb-2">Access Denied</h1>
+            <p className="text-secondary mb-0">
+              Only Project Managers can access the Backlog view.
+            </p>
+          </div>
         </div>
       </div>
     );
   }
-
-  const pageStyles: React.CSSProperties = {
-    marginLeft: isCollapsed ? '80px' : '280px',
-    minHeight: '100vh',
-    background: '#F4F6F8',
-    transition: 'margin-left 0.3s ease',
-  };
-
-  const breadcrumbStyles: React.CSSProperties = {
-    padding: '12px 24px',
-    background: '#FFFFFF',
-    borderBottom: '1px solid #F4F6F8',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '13px',
-    color: '#6B7280',
-  };
-
-  const breadcrumbLinkStyles: React.CSSProperties = {
-    color: '#0056D2',
-    textDecoration: 'none',
-    cursor: 'pointer',
-  };
-
-  const headerStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '24px',
-    margin: '24px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#111827',
-    margin: '0 0 8px 0',
-  };
-
-  const subtitleStyles: React.CSSProperties = {
-    fontSize: '16px',
-    color: '#6B7280',
-    margin: '0 0 24px 0',
-  };
-
-  const filtersStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: '16px',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  };
-
-  const filterGroupStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-  };
-
-  const filterLabelStyles: React.CSSProperties = {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#6B7280',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  };
-
-  const selectStyles: React.CSSProperties = {
-    padding: '8px 12px',
-    border: '1px solid #D1D5DB',
-    borderRadius: '6px',
-    fontSize: '14px',
-    background: '#FFFFFF',
-    minWidth: '120px',
-  };
-
-  const searchInputStyles: React.CSSProperties = {
-    padding: '8px 12px',
-    border: '1px solid #D1D5DB',
-    borderRadius: '6px',
-    fontSize: '14px',
-    background: '#FFFFFF',
-    minWidth: '200px',
-  };
-
-  const contentStyles: React.CSSProperties = {
-    padding: '0 24px 24px 24px',
-  };
-
-  const tasksGridStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-    gap: '20px',
-  };
-
-  const taskCardStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    border: '1px solid #F4F6F8',
-    transition: 'all 0.2s ease',
-    cursor: 'pointer',
-  };
-
-  const taskHeaderStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '12px',
-  };
-
-  const taskTitleStyles: React.CSSProperties = {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 8px 0',
-    lineHeight: '1.4',
-  };
-
-  const taskDescriptionStyles: React.CSSProperties = {
-    fontSize: '14px',
-    color: '#6B7280',
-    margin: '0 0 16px 0',
-    lineHeight: '1.5',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-  };
-
-  const taskMetaStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-  };
-
-  const priorityTagStyles: React.CSSProperties = {
-    fontSize: '11px',
-    fontWeight: '600',
-    padding: '4px 8px',
-    borderRadius: '12px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  };
-
-  const typeTagStyles: React.CSSProperties = {
-    fontSize: '11px',
-    fontWeight: '500',
-    padding: '4px 8px',
-    borderRadius: '12px',
-    background: '#F3F4F6',
-    color: '#6B7280',
-  };
-
-  const taskFooterStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: '16px',
-    borderTop: '1px solid #F4F6F8',
-  };
-
-  const estimatedHoursStyles: React.CSSProperties = {
-    fontSize: '12px',
-    color: '#6B7280',
-    fontWeight: '500',
-  };
-
-  const createdAtStyles: React.CSSProperties = {
-    fontSize: '12px',
-    color: '#9CA3AF',
-  };
-
-  const tagsStyles: React.CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '6px',
-    marginBottom: '12px',
-  };
-
-  const tagStyles: React.CSSProperties = {
-    fontSize: '10px',
-    fontWeight: '500',
-    padding: '2px 6px',
-    borderRadius: '8px',
-    background: '#EBF5FF',
-    color: '#2563EB',
-  };
 
   const getPriorityColor = (priority: string): string => {
     switch (priority) {
@@ -419,47 +145,47 @@ const BacklogPage: React.FC = () => {
   });
 
   const handleTaskClick = (task: Task) => {
-    // TODO: Implement task details modal or navigation
     console.log('Task clicked:', task);
   };
 
   const handleMoveToSprint = (taskId: string) => {
-    // TODO: Implement move to sprint functionality
     console.log('Move to sprint:', taskId);
   };
 
   return (
-    <div style={pageStyles}>
-      <div style={breadcrumbStyles}>
-        <Link to="/" style={breadcrumbLinkStyles}>Home</Link>
+    <div className="page-container" style={{ marginLeft: isCollapsed ? '80px' : '280px', transition: 'margin-left 0.3s ease' }}>
+      <div className="breadcrumb bg-white px-3 py-2 border-bottom d-flex align-items-center gap-2 small text-secondary">
+        <Link to="/" className="text-primary text-decoration-none cursor-pointer">Home</Link>
         <span>›</span>
         <span>Backlog</span>
       </div>
 
-      <div style={headerStyles}>
-        <h1 style={titleStyles}>Project Backlog</h1>
-        <p style={subtitleStyles}>
+      <div className="bg-white rounded-3 p-4 m-3 shadow-sm">
+        <h1 className="display-6 fw-bold text-dark mb-2">Project Backlog</h1>
+        <p className="fs-6 text-secondary mb-4">
           Manage and prioritize tasks for upcoming sprints. Only Project Managers can access this view.
         </p>
         
-        <div style={filtersStyles}>
-          <div style={filterGroupStyles}>
-            <label style={filterLabelStyles}>Search</label>
+        <div className="d-flex gap-3 flex-wrap align-items-end">
+          <div className="d-flex flex-column gap-1">
+            <label className="small fw-semibold text-secondary text-uppercase">Search</label>
             <input
               type="text"
+              className="form-control"
               placeholder="Search tasks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={searchInputStyles}
+              style={{ minWidth: '200px' }}
             />
           </div>
           
-          <div style={filterGroupStyles}>
-            <label style={filterLabelStyles}>Priority</label>
+          <div className="d-flex flex-column gap-1">
+            <label className="small fw-semibold text-secondary text-uppercase">Priority</label>
             <select
+              className="form-select"
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              style={selectStyles}
+              style={{ minWidth: '120px' }}
             >
               <option value="all">All Priorities</option>
               <option value="High">High</option>
@@ -468,12 +194,13 @@ const BacklogPage: React.FC = () => {
             </select>
           </div>
           
-          <div style={filterGroupStyles}>
-            <label style={filterLabelStyles}>Type</label>
+          <div className="d-flex flex-column gap-1">
+            <label className="small fw-semibold text-secondary text-uppercase">Type</label>
             <select
+              className="form-select"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              style={selectStyles}
+              style={{ minWidth: '120px' }}
             >
               <option value="all">All Types</option>
               <option value="frontend">Frontend</option>
@@ -487,114 +214,81 @@ const BacklogPage: React.FC = () => {
         </div>
       </div>
 
-      <div style={contentStyles}>
-        <div style={tasksGridStyles}>
+      <div className="px-3 pb-3">
+        <div className="row g-4">
           {filteredTasks.map(task => (
-            <div
-              key={task.id}
-              style={taskCardStyles}
-              onClick={() => handleTaskClick(task)}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-              }}
-            >
-              <div style={taskHeaderStyles}>
-                <h3 style={taskTitleStyles}>{task.title}</h3>
-                <div 
-                  style={{
-                    ...priorityTagStyles,
-                    color: getPriorityColor(task.priority),
-                    backgroundColor: getPriorityBgColor(task.priority),
-                  }}
-                >
-                  {task.priority}
-                </div>
-              </div>
-              
-              <p style={taskDescriptionStyles}>{task.description}</p>
-              
-              <div style={tagsStyles}>
-                <div 
-                  style={{
-                    ...typeTagStyles,
-                    color: getTypeColor(task.type),
-                    backgroundColor: getTypeBgColor(task.type),
-                  }}
-                >
-                  {task.type}
-                </div>
-                {task.tags.map(tag => (
-                  <span key={tag} style={tagStyles}>{tag}</span>
-                ))}
-              </div>
-              
-              <div style={taskMetaStyles}>
-                <div style={estimatedHoursStyles}>
-                  <span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>event</span>{' '}
-                  Due: {task.dueDate}
-                </div>
-                <div style={estimatedHoursStyles}>
-                  <span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>access_time</span>{' '}
-                  {task.estimatedHours}h
-                </div>
-              </div>
-              
-              <div style={taskFooterStyles}>
-                <div style={createdAtStyles}>
-                  Created: {new Date(task.createdAt).toLocaleDateString()}
-                </div>
-                {hasPermission('canCreateSprints') && (
-                  <button
+            <div key={task.id} className="col-md-6 col-lg-4">
+              <div
+                className="backlog-task-card bg-white rounded-3 p-4 shadow-sm border cursor-pointer h-100"
+                onClick={() => handleTaskClick(task)}
+              >
+                <div className="d-flex justify-content-between align-items-start mb-3">
+                  <h3 className="h6 fw-semibold text-dark mb-2">{task.title}</h3>
+                  <div 
+                    className="small fw-semibold rounded-pill px-2 py-1 text-uppercase"
                     style={{
-                      background: '#2563EB',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleMoveToSprint(task.id);
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#1D4ED8';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#2563EB';
+                      color: getPriorityColor(task.priority),
+                      backgroundColor: getPriorityBgColor(task.priority),
                     }}
                   >
-                    Move to Sprint
-                  </button>
-                )}
+                    {task.priority}
+                  </div>
+                </div>
+                
+                <p className="small text-secondary mb-3 backlog-task-description">{task.description}</p>
+                
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <div 
+                    className="small fw-medium rounded-pill px-2 py-1"
+                    style={{
+                      color: getTypeColor(task.type),
+                      backgroundColor: getTypeBgColor(task.type),
+                    }}
+                  >
+                    {task.type}
+                  </div>
+                  {task.tags.map(tag => (
+                    <span key={tag} className="backlog-tag badge bg-primary">{tag}</span>
+                  ))}
+                </div>
+                
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <div className="small text-secondary fw-medium">
+                    <span className="material-icons align-middle" style={{ fontSize: '14px' }}>event</span>{' '}
+                    Due: {task.dueDate}
+                  </div>
+                  <div className="small text-secondary fw-medium">
+                    <span className="material-icons align-middle" style={{ fontSize: '14px' }}>access_time</span>{' '}
+                    {task.estimatedHours}h
+                  </div>
+                </div>
+                
+                <div className="d-flex justify-content-between align-items-center pt-3 border-top">
+                  <div className="small text-muted">
+                    Created: {new Date(task.createdAt).toLocaleDateString()}
+                  </div>
+                  {hasPermission('canCreateSprints') && (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveToSprint(task.id);
+                      }}
+                    >
+                      Move to Sprint
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
         </div>
         
         {filteredTasks.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '60px 20px',
-            color: '#6B7280',
-          }}>
-            <span className="material-icons" style={{ fontSize: '48px', marginBottom: '16px', display: 'block' }}>
-              inbox
-            </span>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', margin: '0 0 8px 0' }}>
-              No tasks found
-            </h3>
-            <p style={{ fontSize: '14px', margin: '0' }}>
-              Try adjusting your filters or search terms
-            </p>
+          <div className="text-center p-5 text-secondary">
+            <span className="material-icons d-block mb-3" style={{ fontSize: '48px' }}>inbox</span>
+            <h3 className="h6 fw-semibold mb-2">No tasks found</h3>
+            <p className="small mb-0">Try adjusting your filters or search terms</p>
           </div>
         )}
       </div>
@@ -603,4 +297,3 @@ const BacklogPage: React.FC = () => {
 };
 
 export default BacklogPage;
-

@@ -1,480 +1,459 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
-import { User, UserRole, ROLE_PERMISSIONS, getPermissionsForRole } from '../types/permissions';
+import { useSidebar } from '../contexts/SidebarContext';
+import AlertModal from '../components/AlertModal';
+import {
+  getRoles,
+  getRolePermissions,
+  updateRolePermissions,
+  getPermissions,
+  type RoleDto,
+  type PermissionDto,
+  type RolePermissionsDto,
+} from '../services/api';
 
 const PermissionsManagementPage: React.FC = () => {
   const { currentUser, hasPermission } = useUser();
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [selectedRole, setSelectedRole] = useState<UserRole>('frontend-developer');
-  const [customPermissions, setCustomPermissions] = useState<Partial<User['permissions']>>({});
+  const { isCollapsed } = useSidebar();
+  const [roles, setRoles] = useState<RoleDto[]>([]);
+  const [allPermissions, setAllPermissions] = useState<PermissionDto[]>([]);
+  const [selectedRole, setSelectedRole] = useState<RoleDto | null>(null);
+  const [rolePermissions, setRolePermissions] = useState<RolePermissionsDto | null>(null);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<number>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
 
-  // Mock users data - replace with actual API call
-  const mockUsers: User[] = [
-    {
-      id: '1',
-      firstName: 'Davis',
-      lastName: 'Donin',
-      email: 'daviddoni@gmail.com',
-      role: 'project-manager',
-      company: 'Google',
-      permissions: getPermissionsForRole('project-manager'),
-      avatar: 'DD',
-      isActive: true,
-      createdAt: '2024-01-01',
-      lastLogin: '2024-01-15',
-    },
-    {
-      id: '2',
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@gmail.com',
-      role: 'frontend-developer',
-      company: 'Google',
-      permissions: getPermissionsForRole('frontend-developer'),
-      avatar: 'JD',
-      isActive: true,
-      createdAt: '2024-01-02',
-      lastLogin: '2024-01-14',
-    },
-    {
-      id: '3',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@gmail.com',
-      role: 'backend-developer',
-      company: 'Google',
-      permissions: getPermissionsForRole('backend-developer'),
-      avatar: 'JS',
-      isActive: true,
-      createdAt: '2024-01-03',
-      lastLogin: '2024-01-13',
-    },
-  ];
-
-  const roleOptions: { value: UserRole; label: string }[] = [
-    { value: 'project-manager', label: 'Project Manager' },
-    { value: 'frontend-developer', label: 'Frontend Developer' },
-    { value: 'backend-developer', label: 'Backend Developer' },
-    { value: 'fullstack-developer', label: 'Full Stack Developer' },
-    { value: 'qa-tester', label: 'QA Tester' },
-    { value: 'devops-engineer', label: 'DevOps Engineer' },
-    { value: 'ui-ux-designer', label: 'UI/UX Designer' },
-    { value: 'data-analyst', label: 'Data Analyst' },
-    { value: 'product-manager', label: 'Product Manager' },
-    { value: 'scrum-master', label: 'Scrum Master' },
-    { value: 'technical-lead', label: 'Technical Lead' },
-    { value: 'other', label: 'Other' },
-  ];
-
-  const permissionCategories = [
-    {
-      title: 'Task Management',
-      permissions: [
-        'canCreateTasks',
-        'canAssignTasks',
-        'canEditTasks',
-        'canDeleteTasks',
-        'canChangeDeadlines',
-        'canChangePriority',
-        'canChangeStatus',
-      ] as (keyof User['permissions'])[],
-    },
-    {
-      title: 'Task Visibility',
-      permissions: [
-        'canSeeAllTasks',
-        'canSeeFETasks',
-        'canSeeBETasks',
-        'canSeeDesignTasks',
-        'canSeeTestTasks',
-        'canSeeDevOpsTasks',
-        'canSeeDataTasks',
-        'canSeeProductTasks',
-      ] as (keyof User['permissions'])[],
-    },
-    {
-      title: 'Team Management',
-      permissions: [
-        'canAddTeamMembers',
-        'canRemoveTeamMembers',
-        'canChangeUserRoles',
-        'canViewAllTeamMembers',
-      ] as (keyof User['permissions'])[],
-    },
-    {
-      title: 'Project Management',
-      permissions: [
-        'canViewProjectOverview',
-        'canEditProjectSettings',
-        'canCreateSprints',
-        'canManageSprints',
-      ] as (keyof User['permissions'])[],
-    },
-    {
-      title: 'Documentation',
-      permissions: [
-        'canUploadDocuments',
-        'canDeleteDocuments',
-        'canViewAllDocuments',
-      ] as (keyof User['permissions'])[],
-    },
-    {
-      title: 'Meetings',
-      permissions: [
-        'canCreateMeetings',
-        'canEditMeetings',
-        'canDeleteMeetings',
-        'canViewAllMeetings',
-      ] as (keyof User['permissions'])[],
-    },
-    {
-      title: 'Analytics & Reporting',
-      permissions: [
-        'canViewAllMetrics',
-        'canGenerateReports',
-        'canExportData',
-      ] as (keyof User['permissions'])[],
-    },
-    {
-      title: 'Comments & Communication',
-      permissions: [
-        'canAddComments',
-        'canEditComments',
-        'canDeleteComments',
-        'canViewAllComments',
-      ] as (keyof User['permissions'])[],
-    },
-    {
-      title: 'Special Permissions',
-      permissions: [
-        'canManagePermissions',
-        'canAccessAdminPanel',
-        'canViewUserActivity',
-      ] as (keyof User['permissions'])[],
-    },
-  ];
-
-  const pageStyles: React.CSSProperties = {
-    marginLeft: '280px',
-    minHeight: '100vh',
-    background: '#F4F6F8',
-    padding: '32px',
-  };
-
-  const headerStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '24px',
-    marginBottom: '24px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#111827',
-    margin: '0 0 8px 0',
-  };
-
-  const subtitleStyles: React.CSSProperties = {
-    fontSize: '16px',
-    color: '#6B7280',
-    margin: '0',
-  };
-
-  const contentStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: '24px',
-  };
-
-  const leftPanelStyles: React.CSSProperties = {
-    flex: '0 0 300px',
-    background: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '24px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    height: 'fit-content',
-  };
-
-  const rightPanelStyles: React.CSSProperties = {
-    flex: 1,
-    background: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '24px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-  };
-
-  const userListStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  };
-
-  const userItemStyles: React.CSSProperties = {
-    padding: '16px',
-    border: '1px solid #E5E7EB',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  };
-
-  const selectedUserItemStyles: React.CSSProperties = {
-    ...userItemStyles,
-    borderColor: '#2563EB',
-    background: '#EFF6FF',
-  };
-
-  const userAvatarStyles: React.CSSProperties = {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    background: '#2563EB',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '14px',
-    fontWeight: '600',
-    marginBottom: '8px',
-  };
-
-  const userNameStyles: React.CSSProperties = {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 4px 0',
-  };
-
-  const userRoleStyles: React.CSSProperties = {
-    fontSize: '14px',
-    color: '#6B7280',
-    margin: '0',
-  };
-
-  const sectionTitleStyles: React.CSSProperties = {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 16px 0',
-  };
-
-  const roleSelectStyles: React.CSSProperties = {
-    width: '100%',
-    padding: '12px',
-    border: '1px solid #D1D5DB',
-    borderRadius: '8px',
-    fontSize: '14px',
-    marginBottom: '24px',
-    background: '#FFFFFF',
-  };
-
-  const categoryStyles: React.CSSProperties = {
-    marginBottom: '32px',
-  };
-
-  const categoryTitleStyles: React.CSSProperties = {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 16px 0',
-    paddingBottom: '8px',
-    borderBottom: '1px solid #E5E7EB',
-  };
-
-  const permissionGridStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '12px',
-  };
-
-  const permissionItemStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 12px',
-    background: '#F9FAFB',
-    borderRadius: '6px',
-    fontSize: '14px',
-  };
-
-  const checkboxStyles: React.CSSProperties = {
-    width: '16px',
-    height: '16px',
-    accentColor: '#2563EB',
-  };
-
-  const buttonStyles: React.CSSProperties = {
-    background: '#2563EB',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '12px 24px',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    marginTop: '24px',
-  };
-
-  const handleUserSelect = (user: User) => {
-    setSelectedUser(user);
-    setSelectedRole(user.role);
-    setCustomPermissions({});
-  };
-
-  const handleRoleChange = (role: UserRole) => {
-    setSelectedRole(role);
-    setCustomPermissions({});
-  };
-
-  const handlePermissionChange = (permission: keyof User['permissions'], value: boolean) => {
-    setCustomPermissions(prev => ({
-      ...prev,
-      [permission]: value,
-    }));
-  };
-
-  const handleSavePermissions = () => {
-    if (!selectedUser) return;
+  // Load initial data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        const [rolesData, permissionsData] = await Promise.all([
+          getRoles(),
+          getPermissions(),
+        ]);
+        
+        setRoles(rolesData);
+        setAllPermissions(permissionsData);
+        
+        // Auto-select first role if available
+        if (rolesData.length > 0) {
+          handleRoleSelect(rolesData[0]);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load data');
+        console.error('Error loading data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // TODO: Implement API call to save permissions
-    console.log('Saving permissions for user:', selectedUser.id);
-    console.log('Role:', selectedRole);
-    console.log('Custom permissions:', customPermissions);
-    
-    // Show success message
-    alert('Permissions updated successfully!');
-  };
+    loadData();
+  }, []);
 
-  const getPermissionValue = (permission: keyof User['permissions']): boolean => {
-    if (customPermissions.hasOwnProperty(permission)) {
-      return customPermissions[permission] as boolean;
+  // Load role permissions when role is selected
+  const handleRoleSelect = async (role: RoleDto) => {
+    try {
+      setSelectedRole(role);
+      setError(null);
+      
+      const permissionsData = await getRolePermissions(role.id);
+      setRolePermissions(permissionsData);
+      
+      // Set selected permission IDs
+      const selectedIds = new Set(permissionsData.permissions.map(p => p.id));
+      setSelectedPermissionIds(selectedIds);
+    } catch (err) {
+      console.error('Error loading role permissions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load role permissions');
     }
-    return ROLE_PERMISSIONS[selectedRole][permission];
   };
 
-  const getPermissionLabel = (permission: string): string => {
-    return permission
-      .replace('can', '')
-      .replace(/([A-Z])/g, ' $1')
-      .trim()
-      .toLowerCase()
-      .replace(/^./, str => str.toUpperCase());
+  const handlePermissionToggle = (permissionId: number) => {
+    const newSelected = new Set(selectedPermissionIds);
+    if (newSelected.has(permissionId)) {
+      newSelected.delete(permissionId);
+    } else {
+      newSelected.add(permissionId);
+    }
+    setSelectedPermissionIds(newSelected);
   };
 
-  // Check if user has permission to access this page
+  const handleSavePermissions = async () => {
+    if (!selectedRole) return;
+    
+    try {
+      setIsSaving(true);
+      setError(null);
+      
+      const permissionIds = Array.from(selectedPermissionIds);
+      
+      await updateRolePermissions(selectedRole.id, {
+        permission_ids: permissionIds,
+      });
+      
+      // Reload role permissions to get updated state
+      const permissionsData = await getRolePermissions(selectedRole.id);
+      setRolePermissions(permissionsData);
+      
+      // Show success modal
+      setSuccessModalOpen(true);
+    } catch (err) {
+      console.error('Error saving permissions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save permissions');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Get permission categories from allPermissions
+  const permissionCategories = React.useMemo(() => {
+    const categoryMap = new Map<string, PermissionDto[]>();
+    
+    allPermissions.forEach(perm => {
+      if (!categoryMap.has(perm.category)) {
+        categoryMap.set(perm.category, []);
+      }
+      categoryMap.get(perm.category)!.push(perm);
+    });
+    
+    return Array.from(categoryMap.entries()).map(([category, perms]) => ({
+      title: category.charAt(0).toUpperCase() + category.slice(1).replace(/-/g, ' '),
+      permissions: perms,
+    }));
+  }, [allPermissions]);
+
+  const sidebarWidth = isCollapsed ? '80px' : '280px';
+
   if (!hasPermission('canManagePermissions')) {
     return (
-      <div style={pageStyles}>
-        <div style={headerStyles}>
-          <h1 style={titleStyles}>Access Denied</h1>
-          <p style={subtitleStyles}>You don't have permission to manage user permissions.</p>
+      <div className="page-container" style={{ marginLeft: sidebarWidth, padding: '40px', transition: 'margin-left 0.3s ease' }}>
+        <div className="bg-white rounded-lg p-5" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+          <div className="d-flex align-items-center gap-3 mb-3">
+            <span className="material-icons" style={{ fontSize: '24px', color: '#DC2626' }}>block</span>
+            <h1 className="h4 fw-bold mb-0" style={{ color: '#111827' }}>Access Denied</h1>
+          </div>
+          <p className="mb-0" style={{ color: '#6B7280', fontSize: '14px' }}>
+            You don't have permission to manage role permissions.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="page-container" style={{ marginLeft: sidebarWidth, padding: '40px', transition: 'margin-left 0.3s ease' }}>
+        <div className="bg-white rounded-lg p-5 text-center" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
+          <div className="spinner-border mb-3" style={{ color: '#0056D2', width: '40px', height: '40px' }} role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p className="mb-0" style={{ color: '#6B7280', fontSize: '14px' }}>Loading roles and permissions...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={pageStyles}>
-      <div style={headerStyles}>
-        <h1 style={titleStyles}>Permissions Management</h1>
-        <p style={subtitleStyles}>Manage user roles and permissions for your team</p>
+    <div className="page-container" style={{ marginLeft: sidebarWidth, padding: '40px', background: '#F9FAFB', transition: 'margin-left 0.3s ease' }}>
+      {/* Header */}
+      <div className="mb-5">
+        <div className="d-flex align-items-center gap-3 mb-2">
+          <span className="material-icons" style={{ fontSize: '28px', color: '#0056D2' }}>admin_panel_settings</span>
+          <h1 className="h3 fw-bold mb-0" style={{ color: '#111827' }}>Role Permissions</h1>
+        </div>
+        <p className="mb-0" style={{ color: '#6B7280', fontSize: '14px', marginLeft: '44px' }}>
+          Configure permissions for each role. Users automatically inherit permissions from their assigned role.
+        </p>
       </div>
 
-      <div style={contentStyles}>
-        <div style={leftPanelStyles}>
-          <h3 style={sectionTitleStyles}>Team Members</h3>
-          <div style={userListStyles}>
-            {mockUsers.map(user => (
-              <div
-                key={user.id}
-                style={selectedUser?.id === user.id ? selectedUserItemStyles : userItemStyles}
-                onClick={() => handleUserSelect(user)}
-                onMouseEnter={(e) => {
-                  if (selectedUser?.id !== user.id) {
-                    e.currentTarget.style.borderColor = '#9CA3AF';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedUser?.id !== user.id) {
-                    e.currentTarget.style.borderColor = '#E5E7EB';
-                  }
-                }}
-              >
-                <div style={userAvatarStyles}>{user.avatar}</div>
-                <div style={userNameStyles}>{user.firstName} {user.lastName}</div>
-                <div style={userRoleStyles}>
-                  {roleOptions.find(r => r.value === user.role)?.label}
-                </div>
+      {error && (
+        <div className="alert alert-danger d-flex align-items-center gap-2 mb-4 border-0 rounded-lg" 
+             style={{ background: '#FEF2F2', color: '#DC2626', fontSize: '14px', padding: '14px 16px' }} 
+             role="alert">
+          <span className="material-icons" style={{ fontSize: '20px' }}>error</span>
+          <span className="flex-grow-1">{error}</span>
+          <button
+            type="button"
+            className="btn-close"
+            onClick={() => setError(null)}
+            aria-label="Close"
+            style={{ fontSize: '12px' }}
+          ></button>
+        </div>
+      )}
+
+      <div className="d-flex gap-4">
+        {/* Left Panel - Roles */}
+        <div className="bg-white rounded-lg shadow-sm" style={{ 
+          flex: '0 0 320px', 
+          height: 'fit-content', 
+          maxHeight: 'calc(100vh - 220px)', 
+          overflowY: 'auto',
+          border: '1px solid #E5E7EB'
+        }}>
+          <div className="p-4 border-bottom" style={{ borderColor: '#F3F4F6' }}>
+            <div className="d-flex align-items-center gap-2 mb-1">
+              <span className="material-icons" style={{ fontSize: '18px', color: '#64748B' }}>badge</span>
+              <h3 className="h6 fw-semibold mb-0" style={{ color: '#111827', fontSize: '13px', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                Available Roles
+              </h3>
+            </div>
+            <p className="mb-0 small" style={{ color: '#94A3B8', fontSize: '12px' }}>
+              {roles.length} role{roles.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+          
+          <div className="p-3">
+            {roles.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="mb-0" style={{ color: '#94A3B8', fontSize: '13px' }}>No roles found</p>
               </div>
-            ))}
+            ) : (
+              <div className="d-flex flex-column gap-2">
+                {roles.map(role => {
+                  const isSelected = selectedRole?.id === role.id;
+                  const permissionCount = rolePermissions && isSelected ? rolePermissions.permissions.length : 0;
+                  
+                  return (
+                    <div
+                      key={role.id}
+                      className={clsx('role-card rounded-lg p-3 cursor-pointer transition', {
+                        'selected': isSelected
+                      })}
+                      onClick={() => handleRoleSelect(role)}
+                      style={{
+                        border: isSelected ? '2px solid #0056D2' : '1px solid #E5E7EB',
+                        background: isSelected ? '#EBF5FF' : '#FFFFFF',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = '#F9FAFB';
+                          e.currentTarget.style.borderColor = '#D1D5DB';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isSelected) {
+                          e.currentTarget.style.background = '#FFFFFF';
+                          e.currentTarget.style.borderColor = '#E5E7EB';
+                        }
+                      }}
+                    >
+                      <div className="d-flex justify-content-between align-items-start mb-2">
+                        <div className="flex-grow-1">
+                          <div className="fw-semibold mb-1" style={{ 
+                            color: isSelected ? '#0056D2' : '#111827', 
+                            fontSize: '14px',
+                            fontWeight: 600
+                          }}>
+                            {role.name}
+                          </div>
+                          <div className="small" style={{ 
+                            color: isSelected ? '#64748B' : '#94A3B8', 
+                            fontSize: '12px',
+                            fontFamily: 'monospace'
+                          }}>
+                            {role.role_key}
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <span className="material-icons" style={{ 
+                            fontSize: '18px', 
+                            color: '#0056D2' 
+                          }}>check_circle</span>
+                        )}
+                      </div>
+                      {isSelected && permissionCount > 0 && (
+                        <div className="d-flex align-items-center gap-1 mt-2">
+                          <span className="material-icons" style={{ fontSize: '14px', color: '#64748B' }}>verified</span>
+                          <span className="small" style={{ color: '#64748B', fontSize: '12px' }}>
+                            {permissionCount} permission{permissionCount !== 1 ? 's' : ''} enabled
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
-        <div style={rightPanelStyles}>
-          {selectedUser ? (
+        {/* Right Panel - Permissions */}
+        <div className="bg-white rounded-lg shadow-sm flex-grow-1" style={{ 
+          maxHeight: 'calc(100vh - 220px)', 
+          overflowY: 'auto',
+          border: '1px solid #E5E7EB'
+        }}>
+          {selectedRole ? (
             <>
-              <h3 style={sectionTitleStyles}>
-                Permissions for {selectedUser.firstName} {selectedUser.lastName}
-              </h3>
-              
-              <select
-                value={selectedRole}
-                onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-                style={roleSelectStyles}
-              >
-                {roleOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-
-              {permissionCategories.map(category => (
-                <div key={category.title} style={categoryStyles}>
-                  <h4 style={categoryTitleStyles}>{category.title}</h4>
-                  <div style={permissionGridStyles}>
-                    {category.permissions.map(permission => (
-                      <div key={permission} style={permissionItemStyles}>
-                        <input
-                          type="checkbox"
-                          checked={getPermissionValue(permission)}
-                          onChange={(e) => handlePermissionChange(permission, e.target.checked)}
-                          style={checkboxStyles}
-                        />
-                        <span>{getPermissionLabel(permission)}</span>
-                      </div>
-                    ))}
+              {/* Header with Save Button */}
+              <div className="p-4 border-bottom d-flex justify-content-between align-items-center" style={{ borderColor: '#F3F4F6' }}>
+                <div>
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <span className="material-icons" style={{ fontSize: '20px', color: '#0056D2' }}>security</span>
+                    <h3 className="h5 fw-semibold mb-0" style={{ color: '#111827', fontSize: '16px' }}>
+                      {selectedRole.name}
+                    </h3>
                   </div>
+                  <p className="mb-0 small" style={{ color: '#64748B', fontSize: '12px' }}>
+                    <code style={{ background: '#F3F4F6', padding: '2px 6px', borderRadius: '4px', fontSize: '11px' }}>
+                      {selectedRole.role_key}
+                    </code>
+                  </p>
                 </div>
-              ))}
+                <button
+                  className="btn d-flex align-items-center gap-2 fw-semibold"
+                  onClick={handleSavePermissions}
+                  disabled={isSaving}
+                  style={{
+                    height: '40px',
+                    padding: '0 20px',
+                    borderRadius: '8px',
+                    background: isSaving ? '#9CA3AF' : '#0056D2',
+                    color: 'white',
+                    fontSize: '14px',
+                    border: 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSaving) {
+                      e.currentTarget.style.background = '#0044A8';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSaving) {
+                      e.currentTarget.style.background = '#0056D2';
+                    }
+                  }}
+                >
+                  {isSaving ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm" role="status" style={{ width: '14px', height: '14px' }}></span>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-icons" style={{ fontSize: '18px' }}>save</span>
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
-              <button
-                style={buttonStyles}
-                onClick={handleSavePermissions}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#1D4ED8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#2563EB';
-                }}
-              >
-                Save Permissions
-              </button>
+              {/* Permissions List */}
+              <div className="p-4">
+                {permissionCategories.length === 0 ? (
+                  <div className="text-center py-5">
+                    <p className="mb-0" style={{ color: '#94A3B8', fontSize: '13px' }}>No permissions available</p>
+                  </div>
+                ) : (
+                  permissionCategories.map((category, categoryIndex) => (
+                    <div key={category.title} className={categoryIndex > 0 ? 'mt-5' : ''}>
+                      <div className="d-flex align-items-center gap-2 mb-3">
+                        <span className="material-icons" style={{ fontSize: '18px', color: '#64748B' }}>category</span>
+                        <h4 className="h6 fw-semibold mb-0" style={{ 
+                          color: '#374151', 
+                          fontSize: '14px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>
+                          {category.title}
+                        </h4>
+                      </div>
+                      <div className="row g-2">
+                        {category.permissions.map(permission => {
+                          const isSelected = selectedPermissionIds.has(permission.id);
+                          
+                          return (
+                            <div key={permission.id} className="col-md-6 col-lg-4">
+                              <div
+                                className={clsx('permission-item d-flex align-items-center gap-3 p-3 rounded-lg cursor-pointer', {
+                                  'selected': isSelected
+                                })}
+                                onClick={() => handlePermissionToggle(permission.id)}
+                                style={{
+                                  border: isSelected ? '1px solid #0056D2' : '1px solid #E5E7EB',
+                                  background: isSelected ? '#EBF5FF' : '#FFFFFF',
+                                  transition: 'all 0.15s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (!isSaving) {
+                                    e.currentTarget.style.borderColor = isSelected ? '#0056D2' : '#D1D5DB';
+                                    e.currentTarget.style.background = isSelected ? '#EBF5FF' : '#F9FAFB';
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (!isSaving) {
+                                    e.currentTarget.style.borderColor = isSelected ? '#0056D2' : '#E5E7EB';
+                                    e.currentTarget.style.background = isSelected ? '#EBF5FF' : '#FFFFFF';
+                                  }
+                                }}
+                              >
+                                <div className="form-check mb-0" style={{ minWidth: '20px' }}>
+                                  <input
+                                    type="checkbox"
+                                    className="form-check-input"
+                                    checked={isSelected}
+                                    onChange={() => handlePermissionToggle(permission.id)}
+                                    disabled={isSaving}
+                                    style={{
+                                      width: '18px',
+                                      height: '18px',
+                                      marginTop: '2px',
+                                      cursor: isSaving ? 'not-allowed' : 'pointer',
+                                      accentColor: '#0056D2'
+                                    }}
+                                  />
+                                </div>
+                                <span className="small flex-grow-1" style={{ 
+                                  color: isSelected ? '#111827' : '#64748B',
+                                  fontSize: '13px',
+                                  fontWeight: isSelected ? 500 : 400,
+                                  lineHeight: '1.4'
+                                }}>
+                                  {permission.name}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </>
           ) : (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#6B7280' }}>
-              <span className="material-icons" style={{ fontSize: '48px', marginBottom: '16px', display: 'block' }}>
-                person
-              </span>
-              <p>Select a team member to manage their permissions</p>
+            <div className="d-flex flex-column align-items-center justify-content-center p-5" style={{ minHeight: '400px' }}>
+              <div className="rounded-circle d-flex align-items-center justify-content-center mb-3" 
+                   style={{ width: '64px', height: '64px', background: '#F3F4F6' }}>
+                <span className="material-icons" style={{ fontSize: '32px', color: '#94A3B8' }}>badge</span>
+              </div>
+              <p className="mb-0 fw-medium" style={{ color: '#64748B', fontSize: '14px' }}>
+                Select a role to manage its permissions
+              </p>
             </div>
           )}
         </div>
       </div>
+
+      <AlertModal
+        open={successModalOpen}
+        title="Success"
+        message="Role permissions updated successfully!"
+        variant="success"
+        confirmText="OK"
+        onClose={() => setSuccessModalOpen(false)}
+      />
     </div>
   );
 };
 
 export default PermissionsManagementPage;
-

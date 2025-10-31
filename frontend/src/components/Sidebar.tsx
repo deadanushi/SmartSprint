@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import clsx from 'clsx';
 import { useSidebar } from '../contexts/SidebarContext';
 import { useUser } from '../contexts/UserContext';
 
-// Helper function to convert role code to display name
 const getRoleDisplayName = (role: string): string => {
   const roleMap: { [key: string]: string } = {
     'project-manager': 'Project Manager',
@@ -27,330 +27,155 @@ const Sidebar: React.FC = () => {
   const { isCollapsed, setIsCollapsed } = useSidebar();
   const { hasPermission, currentUser, logout } = useUser();
 
-  const sidebarStyles: React.CSSProperties = {
-    width: isCollapsed ? '80px' : '280px',
-    height: '100vh',
-    background: '#FFFFFF',
-    borderRight: '1px solid #E5E7EB',
-    padding: isCollapsed ? '24px 0' : '24px 0',
-    position: 'fixed',
-    left: 0,
-    top: 0,
-    overflowY: 'auto',
-    transition: 'width 0.3s ease',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-  };
-
-  const toggleButtonStyles: React.CSSProperties = {
-    position: 'absolute',
-    top: '20px',
-    right: '-12px',
-    width: '24px',
-    height: '24px',
-    borderRadius: '50%',
-    background: '#FFFFFF',
-    border: '1px solid #E5E7EB',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    fontSize: '12px',
-    color: '#6B7280',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    transition: 'all 0.2s ease',
-  };
-
-  const userProfileStyles: React.CSSProperties = {
-    padding: isCollapsed ? '0 20px 32px 20px' : '0 24px 32px 24px',
-    borderBottom: '1px solid #F3F4F6',
-    marginBottom: '24px',
-    display: 'flex',
-    flexDirection: isCollapsed ? 'column' : 'row',
-    alignItems: 'center',
-    gap: isCollapsed ? '0' : '12px',
-  };
-
-  const avatarStyles: React.CSSProperties = {
-    width: isCollapsed ? '32px' : '40px',
-    height: isCollapsed ? '32px' : '40px',
-    borderRadius: '50%',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: 'white',
-    fontSize: isCollapsed ? '14px' : '16px',
-    fontWeight: '600',
-    marginBottom: isCollapsed ? '8px' : '0',
-  };
-
-  const userNameStyles: React.CSSProperties = {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0',
-    opacity: isCollapsed ? 0 : 1,
-    transition: 'opacity 0.3s ease',
-  };
-
-  const userEmailStyles: React.CSSProperties = {
-    fontSize: '12px',
-    color: '#6B7280',
-    margin: '0',
-    opacity: isCollapsed ? 0 : 1,
-    transition: 'opacity 0.3s ease',
-  };
-
-  const sectionStyles: React.CSSProperties = {
-    marginBottom: '24px',
-  };
-
-  const sectionTitleStyles: React.CSSProperties = {
-    fontSize: '11px',
-    fontWeight: '600',
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    margin: '0 0 12px 0',
-    padding: isCollapsed ? '0 20px' : '0 24px',
-    opacity: isCollapsed ? 0 : 1,
-    transition: 'opacity 0.3s ease',
-  };
-
-  const menuItemStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: isCollapsed ? '0' : '12px',
-    padding: isCollapsed ? '12px 20px' : '12px 24px',
-    fontSize: '14px',
-    color: '#6B7280',
-    textDecoration: 'none',
-    transition: 'all 0.2s ease',
-    cursor: 'pointer',
-    position: 'relative',
-    justifyContent: isCollapsed ? 'center' : 'flex-start',
-  };
-
-  const activeMenuItemStyles: React.CSSProperties = {
-    ...menuItemStyles,
-    background: '#EFF6FF',
-    color: '#2563EB',
-    borderRight: '3px solid #2563EB',
-  };
-
-  const iconStyles: React.CSSProperties = {
-    fontSize: '20px',
-    width: '20px',
-    textAlign: 'center',
-    transition: 'color 0.2s ease',
-  };
-
-  const menuTextStyles: React.CSSProperties = {
-    opacity: isCollapsed ? 0 : 1,
-    transition: 'opacity 0.3s ease',
-    whiteSpace: 'nowrap',
-  };
-
-  const teamSpacesStyles: React.CSSProperties = {
-    ...sectionTitleStyles,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  };
-
-  const addButtonStyles: React.CSSProperties = {
-    fontSize: '16px',
-    color: '#6B7280',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    opacity: isCollapsed ? 0 : 1,
-  };
-
-  const getMenuItemStyle = (path: string) => {
-    return location.pathname === path ? activeMenuItemStyles : menuItemStyles;
-  };
-
-  const MaterialIcon: React.FC<{ name: string; className?: string }> = ({ name, className }) => (
-    <span className={`material-icons ${className || ''}`} style={{ fontSize: '20px' }}>
-      {name}
-    </span>
+  const MaterialIcon: React.FC<{ name: string }> = ({ name }) => (
+    <span className="material-icons" style={{ fontSize: '20px', color: 'inherit' }}>{name}</span>
   );
 
   return (
-    <div style={sidebarStyles}>
+    <div className={clsx('sidebar', { 'sidebar-collapsed': isCollapsed })} style={{ width: isCollapsed ? '80px' : '280px' }}>
       <button 
-        style={toggleButtonStyles}
+        className="sidebar-toggle-btn"
         onClick={() => setIsCollapsed(!isCollapsed)}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#F9FAFB';
-          e.currentTarget.style.borderColor = '#D1D5DB';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = '#FFFFFF';
-          e.currentTarget.style.borderColor = '#E5E7EB';
-        }}
+        title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
-        {isCollapsed ? '→' : '←'}
+        <span className="material-icons" style={{ fontSize: '18px' }}>
+          {isCollapsed ? 'chevron_right' : 'chevron_left'}
+        </span>
       </button>
 
       {/* User Profile */}
-      <div style={userProfileStyles}>
-        <div style={avatarStyles}>{currentUser?.avatar || 'U'}</div>
+      <div className={clsx('sidebar-user-profile', { 'flex-column': isCollapsed })}>
+        <div className={clsx('sidebar-avatar', { 'sidebar-avatar-small': isCollapsed })}>
+          {currentUser?.avatar || 'U'}
+        </div>
         {!isCollapsed && (
           <div>
-            <h3 style={userNameStyles}>
+            <h3 className={clsx('sidebar-user-name')}>
               {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'User'}
             </h3>
-            <p style={userEmailStyles}>{currentUser?.email || 'user@example.com'}</p>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginTop: '4px',
-              fontSize: '12px',
-              color: '#6B7280',
-            }}>
-              <span className="material-icons" style={{ fontSize: '14px' }}>business</span>
+            <p className={clsx('sidebar-user-email')}>{currentUser?.email || 'user@example.com'}</p>
+            <div className="d-flex align-items-center gap-2 mt-1" style={{ fontSize: '12px', color: '#64748B' }}>
+              <span className="material-icons" style={{ fontSize: '14px', color: '#64748B' }}>business</span>
               <span>{currentUser?.company || 'Company'}</span>
             </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginTop: '2px',
-              fontSize: '12px',
-              color: '#6B7280',
-            }}>
-              <span className="material-icons" style={{ fontSize: '14px' }}>badge</span>
+            <div className="d-flex align-items-center gap-2 mt-1" style={{ fontSize: '12px', color: '#64748B' }}>
+              <span className="material-icons" style={{ fontSize: '14px', color: '#64748B' }}>badge</span>
               <span>{getRoleDisplayName(currentUser?.role || 'other')}</span>
             </div>
-            <button
+            <button 
+              className="btn btn-sm w-100 mt-3 d-flex align-items-center justify-content-center gap-2" 
+              onClick={logout}
               style={{
-                background: '#F3F4F6',
-                border: '1px solid #D1D5DB',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                fontSize: '12px',
-                fontWeight: '500',
-                color: '#6B7280',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                marginTop: '8px',
-                transition: 'all 0.2s ease',
-                width: '100%',
-                justifyContent: 'center',
-              }}
-              onClick={() => {
-                logout();
+                height: '36px',
+                borderRadius: '8px',
+                background: '#F4F6F8',
+                color: '#64748B',
+                border: 'none',
+                fontSize: '13px',
+                fontWeight: 500,
+                transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = '#E5E7EB';
-                e.currentTarget.style.borderColor = '#9CA3AF';
+                e.currentTarget.style.color = '#374151';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#F3F4F6';
-                e.currentTarget.style.borderColor = '#D1D5DB';
+                e.currentTarget.style.background = '#F4F6F8';
+                e.currentTarget.style.color = '#64748B';
               }}
             >
-              <span className="material-icons" style={{ fontSize: '14px' }}>logout</span>
+              <span className="material-icons" style={{ fontSize: '16px' }}>logout</span>
               Logout
             </button>
           </div>
         )}
         {isCollapsed && (
-          <button
-            style={{
-              background: '#F3F4F6',
-              border: '1px solid #D1D5DB',
-              borderRadius: '6px',
-              padding: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginTop: '8px',
-              transition: 'all 0.2s ease',
-            }}
-            onClick={() => {
-              logout();
-            }}
+          <button 
+            className="btn btn-sm mt-2" 
+            style={{ 
+              width: '40px', 
+              height: '40px', 
+              padding: 0,
+              background: '#F4F6F8',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#64748B'
+            }} 
+            onClick={logout} 
+            title="Logout"
             onMouseEnter={(e) => {
               e.currentTarget.style.background = '#E5E7EB';
-              e.currentTarget.style.borderColor = '#9CA3AF';
+              e.currentTarget.style.color = '#374151';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#F3F4F6';
-              e.currentTarget.style.borderColor = '#D1D5DB';
+              e.currentTarget.style.background = '#F4F6F8';
+              e.currentTarget.style.color = '#64748B';
             }}
-            title="Logout"
           >
-            <span className="material-icons" style={{ fontSize: '16px', color: '#6B7280' }}>logout</span>
+            <span className="material-icons" style={{ fontSize: '18px' }}>logout</span>
           </button>
         )}
       </div>
 
       {/* Menu Section */}
-      <div style={sectionStyles}>
-        <h4 style={sectionTitleStyles}>Menu</h4>
-        <Link to="/dashboard" style={getMenuItemStyle('/dashboard')}>
+      <div className="sidebar-section">
+        <h4 className={clsx('sidebar-section-title', { 'd-none': isCollapsed })}>Menu</h4>
+        <Link to="/dashboard" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/dashboard', 'justify-content-center': isCollapsed })}>
           <MaterialIcon name="dashboard" />
-          <span style={menuTextStyles}>Dashboard</span>
+          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Dashboard</span>
         </Link>
-        <Link to="/inbox" style={getMenuItemStyle('/inbox')}>
+        <Link to="/inbox" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/inbox', 'justify-content-center': isCollapsed })}>
           <MaterialIcon name="inbox" />
-          <span style={menuTextStyles}>Inbox</span>
+          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Inbox</span>
         </Link>
-        <Link to="/calendar" style={getMenuItemStyle('/calendar')}>
+        <Link to="/calendar" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/calendar', 'justify-content-center': isCollapsed })}>
           <MaterialIcon name="event" />
-          <span style={menuTextStyles}>Calendar</span>
+          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Calendar</span>
         </Link>
       </div>
 
       {/* Team Spaces Section */}
-      <div style={sectionStyles}>
-        <div style={teamSpacesStyles}>
+      <div className="sidebar-section">
+        <div className={clsx('sidebar-section-title', 'd-flex justify-content-between align-items-center', { 'd-none': isCollapsed })}>
           <span>Team spaces</span>
-          <span style={addButtonStyles}>+</span>
+          <span className="sidebar-add-btn">+</span>
         </div>
-            <Link to="/tasks" style={getMenuItemStyle('/tasks')}>
-              <MaterialIcon name="task_alt" />
-              <span style={menuTextStyles}>Tasks</span>
-            </Link>
-            {hasPermission('canViewProjectOverview') && (
-              <Link to="/backlog" style={getMenuItemStyle('/backlog')}>
-                <MaterialIcon name="inventory" />
-                <span style={menuTextStyles}>Backlog</span>
-              </Link>
-            )}
-            <Link to="/docs" style={getMenuItemStyle('/docs')}>
-              <MaterialIcon name="description" />
-              <span style={menuTextStyles}>Docs</span>
-            </Link>
-        <Link to="/meeting" style={getMenuItemStyle('/meeting')}>
+        <Link to="/tasks" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/tasks', 'justify-content-center': isCollapsed })}>
+          <MaterialIcon name="task_alt" />
+          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Tasks</span>
+        </Link>
+        {hasPermission('canViewProjectOverview') && (
+          <Link to="/backlog" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/backlog', 'justify-content-center': isCollapsed })}>
+            <MaterialIcon name="inventory" />
+            <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Backlog</span>
+          </Link>
+        )}
+        <Link to="/docs" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/docs', 'justify-content-center': isCollapsed })}>
+          <MaterialIcon name="description" />
+          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Docs</span>
+        </Link>
+        <Link to="/meeting" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/meeting', 'justify-content-center': isCollapsed })}>
           <MaterialIcon name="groups" />
-          <span style={menuTextStyles}>Meeting</span>
+          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Meeting</span>
         </Link>
       </div>
 
       {/* Other Section */}
-      <div style={sectionStyles}>
-        <h4 style={sectionTitleStyles}>Other</h4>
+      <div className="sidebar-section">
+        <h4 className={clsx('sidebar-section-title', { 'd-none': isCollapsed })}>Other</h4>
         {hasPermission('canManagePermissions') && (
-          <Link to="/permissions" style={getMenuItemStyle('/permissions')}>
+          <Link to="/permissions" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/permissions', 'justify-content-center': isCollapsed })}>
             <MaterialIcon name="admin_panel_settings" />
-            <span style={menuTextStyles}>Permissions</span>
+            <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Permissions</span>
           </Link>
         )}
-        <Link to="/settings" style={getMenuItemStyle('/settings')}>
+        <Link to="/settings" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/settings', 'justify-content-center': isCollapsed })}>
           <MaterialIcon name="settings" />
-          <span style={menuTextStyles}>Settings</span>
+          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Settings</span>
         </Link>
-        <Link to="/support" style={getMenuItemStyle('/support')}>
+        <Link to="/support" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/support', 'justify-content-center': isCollapsed })}>
           <MaterialIcon name="help" />
-          <span style={menuTextStyles}>Support</span>
+          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Support</span>
         </Link>
       </div>
     </div>

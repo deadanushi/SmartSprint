@@ -38,6 +38,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       if (token && tokenStorage.isValid()) {
         const user = getUserFromToken(token);
         if (user) {
+          // Ensure permissions are set
+          if (!user.permissions) {
+            user.permissions = getPermissionsForRole(user.role);
+          }
           setCurrentUser(user);
         } else {
           tokenStorage.remove();
@@ -50,37 +54,37 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   }, []);
 
   const hasPermission = (permission: keyof User['permissions']): boolean => {
-    if (!currentUser) return false;
-    return currentUser.permissions[permission];
+    if (!currentUser || !currentUser.permissions) return false;
+    return currentUser.permissions[permission] === true;
   };
 
   const canSeeTaskType = (taskType: string): boolean => {
-    if (!currentUser) return false;
+    if (!currentUser || !currentUser.permissions) return false;
     
     switch (taskType.toLowerCase()) {
       case 'frontend':
       case 'ui':
       case 'ux':
-        return currentUser.permissions.canSeeFETasks || currentUser.permissions.canSeeAllTasks;
+        return currentUser.permissions.canSeeFETasks === true || currentUser.permissions.canSeeAllTasks === true;
       case 'backend':
       case 'api':
       case 'database':
-        return currentUser.permissions.canSeeBETasks || currentUser.permissions.canSeeAllTasks;
+        return currentUser.permissions.canSeeBETasks === true || currentUser.permissions.canSeeAllTasks === true;
       case 'design':
-        return currentUser.permissions.canSeeDesignTasks || currentUser.permissions.canSeeAllTasks;
+        return currentUser.permissions.canSeeDesignTasks === true || currentUser.permissions.canSeeAllTasks === true;
       case 'test':
       case 'qa':
-        return currentUser.permissions.canSeeTestTasks || currentUser.permissions.canSeeAllTasks;
+        return currentUser.permissions.canSeeTestTasks === true || currentUser.permissions.canSeeAllTasks === true;
       case 'devops':
       case 'deployment':
-        return currentUser.permissions.canSeeDevOpsTasks || currentUser.permissions.canSeeAllTasks;
+        return currentUser.permissions.canSeeDevOpsTasks === true || currentUser.permissions.canSeeAllTasks === true;
       case 'data':
       case 'analytics':
-        return currentUser.permissions.canSeeDataTasks || currentUser.permissions.canSeeAllTasks;
+        return currentUser.permissions.canSeeDataTasks === true || currentUser.permissions.canSeeAllTasks === true;
       case 'product':
-        return currentUser.permissions.canSeeProductTasks || currentUser.permissions.canSeeAllTasks;
+        return currentUser.permissions.canSeeProductTasks === true || currentUser.permissions.canSeeAllTasks === true;
       default:
-        return currentUser.permissions.canSeeAllTasks;
+        return currentUser.permissions.canSeeAllTasks === true;
     }
   };
 
@@ -109,14 +113,16 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       if (res.ok) {
         const u = await res.json();
         // Map backend user to frontend User shape
-        const role = (u.role || 'other') as UserRole;
+        // Handle role_key from backend (from roles table) or role field
+        const roleKey = u.role_key || u.role || 'other';
+        const role = (roleKey === 'admin' ? 'admin' : roleKey) as UserRole;
         const mapped: User = {
           id: String(u.id),
           firstName: u.first_name || u.firstName || '',
           lastName: u.last_name || u.lastName || '',
           email: u.email,
           role,
-          company: '',
+          company: u.company || '',
           permissions: getPermissionsForRole(role),
           avatar: (u.first_name?.[0] || '?') + (u.last_name?.[0] || ''),
           isActive: u.is_active !== false,

@@ -1,18 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import clsx from 'clsx';
 import AlertModal from '../components/AlertModal';
+import { getRoles, searchCompanies, registerUser, type RoleDto, type CompanyDto } from '../services/api';
 
-interface Role {
-  id: string;
-  name: string;
-  icon: string;
-}
-
-interface Company {
-  id: string;
-  name: string;
-  industry: string;
-}
+type Role = RoleDto;
+type Company = CompanyDto;
 
 const RegisterPage: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -23,10 +16,15 @@ const RegisterPage: React.FC = () => {
     password: '',
     confirmPassword: '',
     role: '',
-    company: '',
+    companyId: '',
+    companyName: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [companySearch, setCompanySearch] = useState('');
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [isLoadingRoles, setIsLoadingRoles] = useState(false);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
   const navigate = useNavigate();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -34,40 +32,60 @@ const RegisterPage: React.FC = () => {
   const [modalMsg, setModalMsg] = useState<React.ReactNode>('');
   const [modalVariant, setModalVariant] = useState<'info' | 'success' | 'error' | 'warning'>('info');
 
-  const roles: Role[] = [
-    { id: 'project-manager', name: 'Project Manager', icon: 'supervisor_account' },
-    { id: 'frontend-developer', name: 'Frontend Developer', icon: 'code' },
-    { id: 'backend-developer', name: 'Backend Developer', icon: 'storage' },
-    { id: 'fullstack-developer', name: 'Full Stack Developer', icon: 'developer_mode' },
-    { id: 'qa-tester', name: 'QA Tester', icon: 'bug_report' },
-    { id: 'devops-engineer', name: 'DevOps Engineer', icon: 'cloud' },
-    { id: 'ui-ux-designer', name: 'UI/UX Designer', icon: 'palette' },
-    { id: 'data-analyst', name: 'Data Analyst', icon: 'analytics' },
-    { id: 'product-manager', name: 'Product Manager', icon: 'inventory' },
-    { id: 'scrum-master', name: 'Scrum Master', icon: 'group_work' },
-    { id: 'technical-lead', name: 'Technical Lead', icon: 'engineering' },
-    { id: 'other', name: 'Other', icon: 'person' },
-  ];
+  const getRoleIcon = (roleKey: string): string => {
+    const iconMap: { [key: string]: string } = {
+      'admin': 'admin_panel_settings',
+      'project-manager': 'supervisor_account',
+      'frontend-developer': 'code',
+      'backend-developer': 'storage',
+      'fullstack-developer': 'developer_mode',
+      'qa-tester': 'bug_report',
+      'devops-engineer': 'cloud',
+      'ui-ux-designer': 'palette',
+      'data-analyst': 'analytics',
+      'product-manager': 'inventory',
+      'scrum-master': 'group_work',
+      'technical-lead': 'engineering',
+      'other': 'person',
+    };
+    return iconMap[roleKey] || 'person';
+  };
 
-  const companies: Company[] = [
-    { id: '1', name: 'Google', industry: 'Technology' },
-    { id: '2', name: 'Microsoft', industry: 'Technology' },
-    { id: '3', name: 'Apple', industry: 'Technology' },
-    { id: '4', name: 'Amazon', industry: 'E-commerce' },
-    { id: '5', name: 'Meta', industry: 'Social Media' },
-    { id: '6', name: 'Netflix', industry: 'Entertainment' },
-    { id: '7', name: 'Tesla', industry: 'Automotive' },
-    { id: '8', name: 'Spotify', industry: 'Music' },
-    { id: '9', name: 'Airbnb', industry: 'Travel' },
-    { id: '10', name: 'Uber', industry: 'Transportation' },
-    { id: '11', name: 'Slack', industry: 'Communication' },
-    { id: '12', name: 'Zoom', industry: 'Video Conferencing' },
-  ];
+  useEffect(() => {
+    if (step === 2 && roles.length === 0) {
+      setIsLoadingRoles(true);
+      getRoles()
+        .then(data => setRoles(data))
+        .catch(error => {
+          console.error('Error fetching roles:', error);
+          setModalTitle('Error loading roles');
+          setModalMsg('Failed to load roles. Please refresh the page.');
+          setModalVariant('error');
+          setModalOpen(true);
+        })
+        .finally(() => setIsLoadingRoles(false));
+    }
+  }, [step, roles.length]);
 
-  const filteredCompanies = companies.filter(company =>
-    company.name.toLowerCase().includes(companySearch.toLowerCase()) ||
-    company.industry.toLowerCase().includes(companySearch.toLowerCase())
-  );
+  useEffect(() => {
+    if (companySearch.trim().length === 0) {
+      setCompanies([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setIsLoadingCompanies(true);
+      searchCompanies(companySearch)
+        .then(data => setCompanies(data.filter((c) => c.is_active)))
+        .catch(error => {
+          console.error('Error searching companies:', error);
+          setCompanies([]);
+        })
+        .finally(() => setIsLoadingCompanies(false));
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [companySearch]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -104,40 +122,26 @@ const RegisterPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (step === 3 && formData.company) {
+    if (step === 3 && formData.companyId) {
       setIsLoading(true);
       try {
-        const res = await fetch('http://localhost:8000/api/users', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password,
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            role: formData.role || 'member',
-            avatar_url: null
-          })
+        await registerUser({
+          email: formData.email,
+          password: formData.password,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          role: formData.role || 'other',
+          avatar_url: null,
         });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          const msg = err?.detail || `Registration failed (${res.status})`;
-          setModalTitle('Registration failed');
-          setModalMsg(msg);
-          setModalVariant('error');
-          setModalOpen(true);
-        } else {
-          const data = await res.json();
-          setModalTitle('Account created');
-          setModalMsg('Your account has been created successfully. You can now sign in.');
-          setModalVariant('success');
-          setModalOpen(true);
-          navigate('/login');
-        }
-      } catch (error) {
-        setModalTitle('Network error');
-        setModalMsg('Network error. Please ensure the backend is running.');
+        setModalTitle('Account created');
+        setModalMsg('Your account has been created successfully. You can now sign in.');
+        setModalVariant('success');
+        setModalOpen(true);
+        navigate('/login');
+      } catch (e: any) {
+        const msg = e?.message || 'Registration failed';
+        setModalTitle('Registration failed');
+        setModalMsg(msg);
         setModalVariant('error');
         setModalOpen(true);
       } finally {
@@ -146,304 +150,105 @@ const RegisterPage: React.FC = () => {
     }
   };
 
-  const pageStyles: React.CSSProperties = {
-    minHeight: '100vh',
-    background: '#F9FAFB',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-  };
-
-  const cardStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '48px',
-    width: '100%',
-    maxWidth: '520px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    border: '1px solid #E5E7EB',
-  };
-
-  const logoStyles: React.CSSProperties = {
-    textAlign: 'center',
-    marginBottom: '32px',
-  };
-
-  const logoTextStyles: React.CSSProperties = {
-    fontSize: '32px',
-    fontWeight: '700',
-    color: '#0056D2',
-    margin: '0 0 8px 0',
-  };
-
-  const logoSubtextStyles: React.CSSProperties = {
-    fontSize: '14px',
-    color: '#6B7280',
-    margin: '0',
-  };
-
-  const stepIndicatorStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'center',
-    marginBottom: '32px',
-    gap: '8px',
-  };
-
-  const stepStyles: React.CSSProperties = {
-    width: '36px',
-    height: '36px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '14px',
-    fontWeight: '600',
-    background: '#F3F4F6',
-    color: '#9CA3AF',
-  };
-
-  const activeStepStyles: React.CSSProperties = {
-    ...stepStyles,
-    background: '#0056D2',
-    color: 'white',
-  };
-
-  const completedStepStyles: React.CSSProperties = {
-    ...stepStyles,
-    background: '#10B981',
-    color: 'white',
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: '24px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 8px 0',
-    textAlign: 'center',
-  };
-
-  const subtitleStyles: React.CSSProperties = {
-    fontSize: '14px',
-    color: '#6B7280',
-    margin: '0 0 32px 0',
-    textAlign: 'center',
-  };
-
-  const formStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-  };
-
-  const rowStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: '16px',
-  };
-
-  const inputGroupStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    flex: 1,
-  };
-
-  const labelStyles: React.CSSProperties = {
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#374151',
-  };
-
-  const inputStyles: React.CSSProperties = {
-    padding: '12px 16px',
-    border: '1px solid #E5E7EB',
-    borderRadius: '8px',
-    fontSize: '14px',
-    transition: 'all 0.2s ease',
-    outline: 'none',
-    background: '#FAFBFC',
-  };
-
-  const buttonStyles: React.CSSProperties = {
-    background: '#0056D2',
-    color: 'white',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '14px',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-  };
-
-  const disabledButtonStyles: React.CSSProperties = {
-    ...buttonStyles,
-    background: '#9CA3AF',
-    cursor: 'not-allowed',
-  };
-
-  const roleGridStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '12px',
-    marginTop: '16px',
-  };
-
-  const roleCardStyles: React.CSSProperties = {
-    padding: '16px',
-    border: '1px solid #E5E7EB',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    textAlign: 'center',
-    background: '#FAFBFC',
-  };
-
-  const selectedRoleCardStyles: React.CSSProperties = {
-    ...roleCardStyles,
-    borderColor: '#0056D2',
-    background: '#EBF5FF',
-  };
-
-  const roleIconStyles: React.CSSProperties = {
-    fontSize: '24px',
-    marginBottom: '8px',
-    color: '#6B7280',
-  };
-
-  const selectedRoleIconStyles: React.CSSProperties = {
-    ...roleIconStyles,
-    color: '#0056D2',
-  };
-
-  const roleNameStyles: React.CSSProperties = {
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#374151',
-  };
-
-  const selectedRoleNameStyles: React.CSSProperties = {
-    ...roleNameStyles,
-    color: '#0056D2',
-  };
-
-  const dropdownStyles: React.CSSProperties = {
-    position: 'relative',
-    marginTop: '16px',
-  };
-
-  const dropdownInputStyles: React.CSSProperties = {
-    ...inputStyles,
-    width: '100%',
-    boxSizing: 'border-box',
-  };
-
-  const dropdownListStyles: React.CSSProperties = {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    background: '#FFFFFF',
-    border: '1px solid #E5E7EB',
-    borderRadius: '8px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    maxHeight: '200px',
-    overflowY: 'auto',
-    zIndex: 10,
-    marginTop: '4px',
-  };
-
-  const dropdownItemStyles: React.CSSProperties = {
-    padding: '12px 16px',
-    cursor: 'pointer',
-    borderBottom: '1px solid #F3F4F6',
-    fontSize: '14px',
-    transition: 'background 0.2s ease',
-  };
-
-  const footerStyles: React.CSSProperties = {
-    textAlign: 'center',
-    marginTop: '24px',
-    fontSize: '14px',
-    color: '#6B7280',
-  };
-
-  const linkStyles: React.CSSProperties = {
-    color: '#0056D2',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: '500',
-    transition: 'color 0.2s ease',
-  };
-
   const renderStep1 = () => (
     <>
-      <h2 style={titleStyles}>Create your account</h2>
-      <p style={subtitleStyles}>Let's get started with your basic information</p>
+      <h2 className="text-center mb-2" style={{ fontSize: '24px', fontWeight: 600, color: '#111827' }}>Create your account</h2>
+      <p className="text-center mb-4" style={{ fontSize: '14px', color: '#6B7280' }}>Let's get started with your basic information</p>
       
-      <form style={formStyles}>
-        <div style={rowStyles}>
-          <div style={inputGroupStyles}>
-            <label style={labelStyles}>First name</label>
+      <div className="d-flex flex-column gap-3">
+        <div className="row g-3">
+          <div className="col-md-6">
+            <label className="form-label fw-medium mb-1" style={{ fontSize: '14px', color: '#374151' }}>First name</label>
             <input
               type="text"
+              className="form-control"
               value={formData.firstName}
               onChange={(e) => handleInputChange('firstName', e.target.value)}
               placeholder="Enter your first name"
-              style={inputStyles}
               required
+              style={{ 
+                borderRadius: '8px',
+                border: '1px solid #E5E7EB',
+                fontSize: '14px',
+                padding: '12px 16px',
+                background: '#FAFBFC'
+              }}
             />
           </div>
-          <div style={inputGroupStyles}>
-            <label style={labelStyles}>Last name</label>
+          <div className="col-md-6">
+            <label className="form-label fw-medium mb-1" style={{ fontSize: '14px', color: '#374151' }}>Last name</label>
             <input
               type="text"
+              className="form-control"
               value={formData.lastName}
               onChange={(e) => handleInputChange('lastName', e.target.value)}
               placeholder="Enter your last name"
-              style={inputStyles}
               required
+              style={{ 
+                borderRadius: '8px',
+                border: '1px solid #E5E7EB',
+                fontSize: '14px',
+                padding: '12px 16px',
+                background: '#FAFBFC'
+              }}
             />
           </div>
         </div>
 
-        <div style={inputGroupStyles}>
-          <label style={labelStyles}>Email address</label>
+        <div>
+          <label className="form-label fw-medium mb-1" style={{ fontSize: '14px', color: '#374151' }}>Email address</label>
           <input
             type="email"
+            className="form-control"
             value={formData.email}
             onChange={(e) => handleInputChange('email', e.target.value)}
             placeholder="Enter your email"
-            style={inputStyles}
             required
+            style={{ 
+              borderRadius: '8px',
+              border: '1px solid #E5E7EB',
+              fontSize: '14px',
+              padding: '12px 16px',
+              background: '#FAFBFC'
+            }}
           />
         </div>
 
-        <div style={rowStyles}>
-          <div style={inputGroupStyles}>
-            <label style={labelStyles}>Password</label>
+        <div className="row g-3">
+          <div className="col-md-6">
+            <label className="form-label fw-medium mb-1" style={{ fontSize: '14px', color: '#374151' }}>Password</label>
             <input
               type="password"
+              className="form-control"
               value={formData.password}
               onChange={(e) => handleInputChange('password', e.target.value)}
               placeholder="Create a password"
-              style={inputStyles}
               required
+              style={{ 
+                borderRadius: '8px',
+                border: '1px solid #E5E7EB',
+                fontSize: '14px',
+                padding: '12px 16px',
+                background: '#FAFBFC'
+              }}
             />
           </div>
-          <div style={inputGroupStyles}>
-            <label style={labelStyles}>Confirm password</label>
+          <div className="col-md-6">
+            <label className="form-label fw-medium mb-1" style={{ fontSize: '14px', color: '#374151' }}>Confirm password</label>
             <input
               type="password"
+              className="form-control"
               value={formData.confirmPassword}
               onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
               placeholder="Confirm your password"
-              style={inputStyles}
               required
+              style={{ 
+                borderRadius: '8px',
+                border: '1px solid #E5E7EB',
+                fontSize: '14px',
+                padding: '12px 16px',
+                background: '#FAFBFC'
+              }}
             />
           </div>
         </div>
@@ -451,71 +256,83 @@ const RegisterPage: React.FC = () => {
         <button
           type="button"
           onClick={handleNext}
-          style={buttonStyles}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#0043A0';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#0056D2';
+          className="btn w-100 mt-2 fw-bold d-flex align-items-center justify-content-center"
+          style={{ 
+            height: '46px',
+            borderRadius: '8px',
+            background: '#0056D2',
+            color: 'white',
+            fontSize: '15px',
+            border: 'none',
+            padding: '14px'
           }}
         >
           Continue
         </button>
-      </form>
+      </div>
     </>
   );
 
   const renderStep2 = () => (
     <>
-      <h2 style={titleStyles}>What's your role?</h2>
-      <p style={subtitleStyles}>Select your primary role in the team</p>
+      <h2 className="text-center mb-2" style={{ fontSize: '24px', fontWeight: 600, color: '#111827' }}>What's your role?</h2>
+      <p className="text-center mb-4" style={{ fontSize: '14px', color: '#6B7280' }}>Select your primary role in the team</p>
       
-      <div style={roleGridStyles}>
-        {roles.map(role => (
-          <div
-            key={role.id}
-            style={formData.role === role.id ? selectedRoleCardStyles : roleCardStyles}
-            onClick={() => handleInputChange('role', role.id)}
-                onMouseEnter={(e) => {
-                  if (formData.role !== role.id) {
-                    e.currentTarget.style.borderColor = '#D1D5DB';
-                    e.currentTarget.style.background = '#F9FAFB';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (formData.role !== role.id) {
-                    e.currentTarget.style.borderColor = '#E5E7EB';
-                    e.currentTarget.style.background = '#FAFBFC';
-                  }
-                }}
-          >
-            <span 
-              className="material-icons" 
-              style={formData.role === role.id ? selectedRoleIconStyles : roleIconStyles}
-            >
-              {role.icon}
-            </span>
-            <div style={formData.role === role.id ? selectedRoleNameStyles : roleNameStyles}>
-              {role.name}
-            </div>
+      {isLoadingRoles ? (
+        <div className="text-center py-5">
+          <div className="spinner-border mb-3" style={{ color: '#0056D2' }} role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
-        ))}
-      </div>
+          <p className="mb-0" style={{ color: '#6B7280' }}>Loading roles...</p>
+        </div>
+      ) : (
+        <div className="role-grid row g-3 mb-4">
+          {roles.map(role => (
+            <div
+              key={role.id}
+              className="col-6 col-md-4"
+            >
+              <div
+                className="role-card border rounded p-3 text-center cursor-pointer h-100"
+                onClick={() => handleInputChange('role', role.role_key)}
+                style={{ 
+                  background: formData.role === role.role_key ? '#EBF5FF' : '#FAFBFC',
+                  borderColor: formData.role === role.role_key ? '#0056D2' : '#E5E7EB',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <span className="material-icons d-block mb-2" style={{ 
+                  fontSize: '24px',
+                  color: formData.role === role.role_key ? '#0056D2' : '#6B7280'
+                }}>
+                  {getRoleIcon(role.role_key)}
+                </span>
+                <div className="small fw-medium" style={{ 
+                  color: formData.role === role.role_key ? '#0056D2' : '#374151',
+                  fontSize: '14px'
+                }}>
+                  {role.name}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <button
         type="button"
         onClick={handleNext}
-        style={!formData.role ? disabledButtonStyles : buttonStyles}
+        className="btn w-100 fw-bold d-flex align-items-center justify-content-center"
         disabled={!formData.role}
-        onMouseEnter={(e) => {
-          if (formData.role) {
-            e.currentTarget.style.background = '#0043A0';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (formData.role) {
-            e.currentTarget.style.background = '#0056D2';
-          }
+        style={{ 
+          height: '46px',
+          borderRadius: '8px',
+          background: formData.role ? '#0056D2' : '#9CA3AF',
+          color: 'white',
+          fontSize: '15px',
+          border: 'none',
+          padding: '14px',
+          cursor: formData.role ? 'pointer' : 'not-allowed'
         }}
       >
         Continue
@@ -525,75 +342,91 @@ const RegisterPage: React.FC = () => {
 
   const renderStep3 = () => (
     <>
-      <h2 style={titleStyles}>Join your team</h2>
-      <p style={subtitleStyles}>Search and select your company</p>
+      <h2 className="text-center mb-2" style={{ fontSize: '24px', fontWeight: 600, color: '#111827' }}>Join your team</h2>
+      <p className="text-center mb-4" style={{ fontSize: '14px', color: '#6B7280' }}>Search and select your company</p>
       
-      <div style={dropdownStyles}>
+      <div className="position-relative mb-4">
         <input
           type="text"
+          className="form-control"
           value={companySearch}
           onChange={(e) => setCompanySearch(e.target.value)}
           placeholder="Search for your company..."
-          style={dropdownInputStyles}
+          disabled={isLoadingCompanies}
+          style={{ 
+            borderRadius: '8px',
+            border: '1px solid #E5E7EB',
+            fontSize: '14px',
+            padding: '12px 16px',
+            background: '#FAFBFC'
+          }}
         />
         {companySearch && (
-          <div style={dropdownListStyles}>
-            {filteredCompanies.map(company => (
-              <div
-                key={company.id}
-                style={dropdownItemStyles}
-                onClick={() => {
-                  handleInputChange('company', company.name);
-                  setCompanySearch('');
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#F9FAFB';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#FFFFFF';
-                }}
-              >
-                <div style={{ fontWeight: '500', color: '#111827' }}>{company.name}</div>
-                <div style={{ fontSize: '12px', color: '#6B7280' }}>{company.industry}</div>
+          <div className="dropdown-list position-absolute top-100 start-0 end-0 bg-white border rounded mt-2 shadow-lg" style={{ zIndex: 1000, maxHeight: '250px', overflowY: 'auto' }}>
+            {isLoadingCompanies ? (
+              <div className="p-3 text-center">
+                <div className="spinner-border spinner-border-sm me-2" style={{ color: '#0056D2' }} role="status"></div>
+                <span style={{ color: '#6B7280' }}>Searching...</span>
               </div>
-            ))}
+            ) : companies.length === 0 ? (
+              <div className="p-3 text-center" style={{ color: '#6B7280' }}>
+                No companies found
+              </div>
+            ) : (
+              companies.map(company => (
+                <div
+                  key={company.id}
+                  className="dropdown-item p-3 border-bottom cursor-pointer"
+                  style={{ transition: 'background 0.2s ease', fontSize: '14px' }}
+                  onClick={() => {
+                    handleInputChange('companyId', String(company.id));
+                    handleInputChange('companyName', company.name);
+                    setCompanySearch('');
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                >
+                  <div className="fw-medium" style={{ color: '#111827' }}>{company.name}</div>
+                  {company.domain && (
+                    <div className="small" style={{ color: '#6B7280' }}>{company.domain}</div>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
       </div>
 
-      {formData.company && (
-        <div style={{
-          padding: '12px 16px',
-          background: '#EBF5FF',
-          border: '1px solid #0056D2',
-          borderRadius: '8px',
-          marginTop: '16px',
-        }}>
-          <div style={{ fontSize: '14px', fontWeight: '500', color: '#0056D2' }}>
-            Selected: {formData.company}
+      {formData.companyName && (
+        <div className="mb-4 p-3 rounded border" style={{ background: '#EBF5FF', borderColor: '#0056D2' }}>
+          <div className="d-flex align-items-center gap-2">
+            <span className="material-icons" style={{ fontSize: '20px', color: '#0056D2' }}>check_circle</span>
+            <span className="fw-medium" style={{ color: '#0056D2', fontSize: '14px' }}>
+              Selected: <strong>{formData.companyName}</strong>
+            </span>
           </div>
         </div>
       )}
 
-      <form style={formStyles} onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         <button
           type="submit"
-          style={!formData.company || isLoading ? disabledButtonStyles : buttonStyles}
-          disabled={!formData.company || isLoading}
-          onMouseEnter={(e) => {
-            if (formData.company && !isLoading) {
-              e.currentTarget.style.background = '#0043A0';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (formData.company && !isLoading) {
-              e.currentTarget.style.background = '#0056D2';
-            }
+          className="btn w-100 fw-bold d-flex align-items-center justify-content-center gap-2"
+          disabled={!formData.companyId || isLoading}
+          style={{ 
+            height: '46px',
+            borderRadius: '8px',
+            background: (formData.companyId && !isLoading) ? '#0056D2' : '#9CA3AF',
+            color: 'white',
+            fontSize: '15px',
+            border: 'none',
+            padding: '14px',
+            cursor: (formData.companyId && !isLoading) ? 'pointer' : 'not-allowed'
           }}
         >
           {isLoading ? (
             <>
-              <span className="material-icons" style={{ fontSize: '16px' }}>hourglass_empty</span>
+              <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
               Creating account...
             </>
           ) : (
@@ -605,24 +438,25 @@ const RegisterPage: React.FC = () => {
   );
 
   return (
-    <div style={pageStyles}>
-      <div style={cardStyles}>
-        <div style={logoStyles}>
-          <h1 style={logoTextStyles}>TaskFlow</h1>
-          <p style={logoSubtextStyles}>Project Management Made Simple</p>
+    <div className="page-container min-vh-100 d-flex align-items-center justify-content-center py-5">
+      <div className="register-card bg-white rounded-4 p-5 w-100" style={{ maxWidth: '600px' }}>
+        <div className="logo-section text-center mb-4">
+          <h1 className="h3 fw-bold mb-2" style={{ color: '#0056D2', fontSize: '32px', fontWeight: 700 }}>TaskFlow</h1>
+          <p className="mb-0" style={{ color: '#6B7280', fontSize: '14px' }}>Project Management Made Simple</p>
         </div>
 
-        <div style={stepIndicatorStyles}>
+        <div className="step-indicator d-flex justify-content-center gap-2 mb-4">
           {[1, 2, 3].map(stepNum => (
             <div
               key={stepNum}
-              style={
-                stepNum < step
-                  ? completedStepStyles
-                  : stepNum === step
-                  ? activeStepStyles
-                  : stepStyles
-              }
+              className="rounded-circle d-flex align-items-center justify-content-center fw-semibold"
+              style={{ 
+                width: '36px', 
+                height: '36px', 
+                fontSize: '14px',
+                background: stepNum === step ? '#0056D2' : (stepNum < step ? '#10B981' : '#F3F4F6'),
+                color: stepNum > step ? '#9CA3AF' : 'white'
+              }}
             >
               {stepNum < step ? '✓' : stepNum}
             </div>
@@ -633,9 +467,9 @@ const RegisterPage: React.FC = () => {
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
 
-        <div style={footerStyles}>
-          Already have an account?{' '}
-          <Link to="/login" style={linkStyles}>
+        <div className="text-center mt-4 pt-3 border-top">
+          <span style={{ color: '#6B7280', fontSize: '14px' }}>Already have an account? </span>
+          <Link to="/login" className="text-decoration-none fw-bold" style={{ color: '#0056D2', fontSize: '14px' }}>
             Sign in
           </Link>
         </div>
@@ -652,4 +486,3 @@ const RegisterPage: React.FC = () => {
 };
 
 export default RegisterPage;
-
