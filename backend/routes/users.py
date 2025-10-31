@@ -109,6 +109,42 @@ def list_users(
     ]
 
 
+@router.get("/login", response_model=UserResponse)
+def login_user(email: EmailStr, password: str, db: Session = Depends(get_db_dependency)):
+    """
+    Temporary login via GET with query params (?email=...&password=...)
+    Returns user if email & password match exactly.
+    Includes role_key from Role relationship.
+    """
+    from sqlalchemy.orm import joinedload
+    
+    user = db.query(User).options(joinedload(User.role)).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user.password_hash != password:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
+
+    # Get role_key from relationship (or 'other' as default)
+    role_key = user.role.role_key if user.role else 'other'
+    
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        role=role_key,
+        avatar_url=user.avatar_url,
+        is_active=user.is_active,
+        email_verified=user.email_verified,
+        created_at=user.created_at,
+        updated_at=user.updated_at
+    )
+
+
 @router.get("/{user_id}", response_model=UserDetailResponse)
 def get_user(user_id: int, db: Session = Depends(get_db_dependency)):
     """
@@ -213,42 +249,6 @@ def update_user(
         is_active=user.is_active,
         email_verified=user.email_verified,
         last_login=user.last_login,
-        created_at=user.created_at,
-        updated_at=user.updated_at
-    )
-
-
-@router.get("/login", response_model=UserResponse)
-def login_user(email: EmailStr, password: str, db: Session = Depends(get_db_dependency)):
-    """
-    Temporary login via GET with query params (?email=...&password=...)
-    Returns user if email & password match exactly.
-    Includes role_key from Role relationship.
-    """
-    from sqlalchemy.orm import joinedload
-    
-    user = db.query(User).options(joinedload(User.role)).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    if user.password_hash != password:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-
-    if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
-
-    # Get role_key from relationship (or 'other' as default)
-    role_key = user.role.role_key if user.role else 'other'
-    
-    return UserResponse(
-        id=user.id,
-        email=user.email,
-        first_name=user.first_name,
-        last_name=user.last_name,
-        role=role_key,
-        avatar_url=user.avatar_url,
-        is_active=user.is_active,
-        email_verified=user.email_verified,
         created_at=user.created_at,
         updated_at=user.updated_at
     )

@@ -119,54 +119,6 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-## 📁 Project Structure
-
-```
-frontend/
-├── public/
-│   └── index.html              # Main HTML file
-├── src/
-│   ├── components/             # React components
-│   │   ├── Board.tsx
-│   │   ├── Column.tsx
-│   │   ├── TaskCard.tsx
-│   │   ├── TaskDetailsModal.tsx
-│   │   ├── Sidebar.tsx
-│   │   ├── HeaderComponent.tsx
-│   │   └── ProtectedRoute.tsx
-│   ├── contexts/               # Global state
-│   │   ├── UserContext.tsx
-│   │   └── SidebarContext.tsx
-│   ├── pages/                   # Page components
-│   │   ├── LoginPage.tsx
-│   │   ├── TasksPage.tsx
-│   │   ├── CalendarPage.tsx
-│   │   ├── BacklogPage.tsx
-│   │   └── PermissionsManagementPage.tsx
-│   ├── types/                  # TypeScript types
-│   │   └── permissions.ts
-│   ├── utils/                  # Utility functions
-│   │   └── auth.ts
-│   ├── data/                   # Mock data
-│   │   └── sampleData.js
-│   ├── App.tsx                 # Main app component
-│   └── index.tsx               # Entry point
-├── package.json                # Dependencies
-└── tsconfig.json              # TypeScript config
-```
-
-## 🌐 Browser Support
-
-The application works best in:
-- **Chrome/Chromium**: Recommended
-- **Firefox**: Fully supported
-- **Safari**: Fully supported
-- **Edge**: Fully supported
-
-**Minimum Requirements**:
-- Modern browser with ES6+ support
-- JavaScript enabled
-- LocalStorage support
 
 ## 🎯 Features Overview
 

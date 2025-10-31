@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import AlertModal from '../components/AlertModal';
+import { useUser } from '../contexts/UserContext';
 import { getRoles, searchCompanies, registerUser, type RoleDto, type CompanyDto } from '../services/api';
 
 type Role = RoleDto;
@@ -26,6 +27,7 @@ const RegisterPage: React.FC = () => {
   const [isLoadingRoles, setIsLoadingRoles] = useState(false);
   const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
   const navigate = useNavigate();
+  const { login } = useUser();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
@@ -133,11 +135,29 @@ const RegisterPage: React.FC = () => {
           role: formData.role || 'other',
           avatar_url: null,
         });
-        setModalTitle('Account created');
-        setModalMsg('Your account has been created successfully. You can now sign in.');
-        setModalVariant('success');
-        setModalOpen(true);
-        navigate('/login');
+        
+        // Automatically log in after successful registration
+        const loginResult = await login(formData.email, formData.password);
+        
+        if (loginResult.success) {
+          setModalTitle('Account created');
+          setModalMsg('Your account has been created successfully. You are now logged in.');
+          setModalVariant('success');
+          setModalOpen(true);
+          // Navigate to tasks page after a short delay to show the success message
+          setTimeout(() => {
+            navigate('/tasks');
+          }, 1500);
+        } else {
+          // Registration succeeded but login failed - redirect to login page
+          setModalTitle('Account created');
+          setModalMsg('Your account has been created successfully. Please sign in to continue.');
+          setModalVariant('success');
+          setModalOpen(true);
+          setTimeout(() => {
+            navigate('/login');
+          }, 1500);
+        }
       } catch (e: any) {
         const msg = e?.message || 'Registration failed';
         setModalTitle('Registration failed');
