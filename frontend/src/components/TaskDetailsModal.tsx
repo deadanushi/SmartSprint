@@ -1,4 +1,5 @@
 import React from 'react';
+import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
 
 interface Task {
@@ -12,7 +13,7 @@ interface Task {
   comments: number;
   links: number;
   progress: string;
-  type: string; // Added task type for permission checking
+  type: string;
 }
 
 interface User {
@@ -76,244 +77,6 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, users, isOpen
     return task.assignees.map(userId => users[userId]).filter(Boolean);
   };
 
-  const modalOverlayStyles: React.CSSProperties = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: '20px',
-  };
-
-  const modalStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '16px',
-    width: '100%',
-    maxWidth: '900px',
-    maxHeight: '90vh',
-    overflow: 'auto',
-    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-    position: 'relative',
-  };
-
-  const closeButtonStyles: React.CSSProperties = {
-    position: 'absolute',
-    top: '16px',
-    right: '16px',
-    background: '#F4F6F8',
-    border: 'none',
-    borderRadius: '8px',
-    width: '32px',
-    height: '32px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    fontSize: '18px',
-    color: '#6B7280',
-    transition: 'all 0.2s ease',
-    zIndex: 10,
-  };
-
-  const headerStyles: React.CSSProperties = {
-    padding: '32px 32px 24px 32px',
-    borderBottom: '1px solid #F4F6F8',
-  };
-
-  const statusBadgeStyles: React.CSSProperties = {
-    display: 'inline-block',
-    padding: '8px 16px',
-    borderRadius: '20px',
-    fontSize: '12px',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    marginBottom: '16px',
-  };
-
-  const taskTitleStyles: React.CSSProperties = {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#0D0D0D',
-    margin: '0 0 16px 0',
-    lineHeight: '1.3',
-    paddingRight: '40px',
-  };
-
-  const taskDescriptionStyles: React.CSSProperties = {
-    fontSize: '16px',
-    color: '#6B7280',
-    lineHeight: '1.6',
-    margin: '0',
-    fontStyle: 'italic',
-  };
-
-  const contentStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: '32px',
-    padding: '32px',
-  };
-
-  const mainContentStyles: React.CSSProperties = {
-    flex: 1,
-  };
-
-  const sidebarStyles: React.CSSProperties = {
-    width: '240px',
-    flexShrink: 0,
-  };
-
-  const sectionStyles: React.CSSProperties = {
-    marginBottom: '32px',
-  };
-
-  const sectionTitleStyles: React.CSSProperties = {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#0D0D0D',
-    margin: '0 0 8px 0',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  };
-
-  const commentsSectionStyles: React.CSSProperties = {
-    background: '#F9FAFB',
-    borderRadius: '12px',
-    padding: '20px',
-    border: '1px solid #F4F6F8',
-  };
-
-  const commentStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '8px',
-    padding: '16px',
-    marginBottom: '12px',
-    border: '1px solid #F4F6F8',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-  };
-
-  const commentHeaderStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '8px',
-  };
-
-  const commentAuthorStyles: React.CSSProperties = {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#0D0D0D',
-  };
-
-  const commentTimeStyles: React.CSSProperties = {
-    fontSize: '12px',
-    color: '#6B7280',
-  };
-
-  const commentTextStyles: React.CSSProperties = {
-    fontSize: '14px',
-    color: '#374151',
-    lineHeight: '1.5',
-    margin: '0',
-  };
-
-  const sidebarSectionStyles: React.CSSProperties = {
-    background: '#F9FAFB',
-    borderRadius: '8px',
-    padding: '12px',
-    marginBottom: '12px',
-    border: '1px solid #F4F6F8',
-  };
-
-  const priorityTagStyles: React.CSSProperties = {
-    display: 'inline-block',
-    padding: '6px 12px',
-    borderRadius: '16px',
-    fontSize: '11px',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    marginBottom: '8px',
-  };
-
-  const statusTagStyles: React.CSSProperties = {
-    display: 'inline-block',
-    padding: '6px 12px',
-    borderRadius: '16px',
-    fontSize: '11px',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-    marginBottom: '8px',
-  };
-
-  const infoItemStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '13px',
-    color: '#6B7280',
-    fontWeight: '500',
-    marginBottom: '8px',
-  };
-
-  const assigneesContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  };
-
-  const assigneeStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '6px 8px',
-    background: '#FFFFFF',
-    borderRadius: '6px',
-    fontSize: '13px',
-    fontWeight: '500',
-    color: '#0D0D0D',
-    border: '1px solid #F4F6F8',
-  };
-
-  const assigneeAvatarStyles: React.CSSProperties = {
-    width: '20px',
-    height: '20px',
-    borderRadius: '50%',
-    background: '#0056D2',
-    color: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '9px',
-    fontWeight: '600',
-  };
-
-  const metricsContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  };
-
-  const metricStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '13px',
-    color: '#6B7280',
-    fontWeight: '500',
-    padding: '6px 8px',
-    background: '#FFFFFF',
-    borderRadius: '6px',
-    border: '1px solid #F4F6F8',
-  };
-
-  // Sample comments data
   const sampleComments = [
     {
       id: 1,
@@ -332,64 +95,59 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, users, isOpen
   ];
 
   return (
-    <div style={modalOverlayStyles} onClick={onClose}>
-      <div style={modalStyles} onClick={(e) => e.stopPropagation()}>
+    <div 
+      className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-4" 
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 1000 }} 
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-3 w-100 shadow-lg position-relative" 
+        style={{ maxWidth: '900px', maxHeight: '90vh', overflow: 'auto' }}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button 
-          style={closeButtonStyles}
+          className="position-absolute bg-light border-0 rounded p-2 d-flex align-items-center justify-content-center"
+          style={{ top: '16px', right: '16px', width: '32px', height: '32px', fontSize: '18px', color: '#6B7280', zIndex: 10 }}
           onClick={onClose}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#E5E7EB';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#F4F6F8';
-          }}
         >
           ×
         </button>
 
-        <div style={headerStyles}>
+        <div className="p-4 border-bottom">
           <div 
+            className="d-inline-block rounded-pill px-3 py-2 small fw-semibold text-uppercase mb-3"
             style={{
-              ...statusBadgeStyles,
               color: getStatusColor(task.status),
               backgroundColor: getStatusBgColor(task.status),
             }}
           >
             {task.status}
           </div>
-          <h1 style={taskTitleStyles}>{task.title}</h1>
-          <p style={taskDescriptionStyles}>{task.description}</p>
+          <h1 className="display-6 fw-bold text-dark mb-3 pe-5">{task.title}</h1>
+          <p className="fs-6 text-secondary mb-0 fst-italic">{task.description}</p>
         </div>
 
-        <div style={contentStyles}>
-          <div style={mainContentStyles}>
-            <div style={sectionStyles}>
-              <h3 style={sectionTitleStyles}>Comments</h3>
-              <div style={commentsSectionStyles}>
+        <div className="d-flex gap-4 p-4">
+          <div className="flex-grow-1">
+            <div className="mb-4">
+              <h3 className="small fw-semibold text-dark text-uppercase mb-3">Comments</h3>
+              <div className="task-modal-comments-section bg-light rounded-3 p-3 border">
                 {hasPermission('canViewAllComments') && (
                   <>
                     {sampleComments.map(comment => (
-                      <div key={comment.id} style={commentStyles}>
-                        <div style={commentHeaderStyles}>
-                          <div style={assigneeAvatarStyles}>{comment.avatar}</div>
-                          <span style={commentAuthorStyles}>{comment.author}</span>
-                          <span style={commentTimeStyles}>{comment.time}</span>
+                      <div key={comment.id} className="task-modal-comment bg-white rounded p-3 mb-3 border shadow-sm">
+                        <div className="d-flex align-items-center gap-2 mb-2">
+                          <div className="task-modal-avatar-small">{comment.avatar}</div>
+                          <span className="small fw-semibold text-dark">{comment.author}</span>
+                          <span className="small text-secondary">{comment.time}</span>
                         </div>
-                        <p style={commentTextStyles}>{comment.text}</p>
+                        <p className="small text-body mb-0">{comment.text}</p>
                       </div>
                     ))}
                   </>
                 )}
                 {hasPermission('canAddComments') && (
-                  <div style={{
-                    ...commentStyles,
-                    background: '#F4F6F8',
-                    border: '2px dashed #D1D5DB',
-                    textAlign: 'center',
-                    color: '#6B7280',
-                    fontStyle: 'italic',
-                    cursor: 'pointer',
-                  }}>
+                  <div className="task-modal-comment bg-light border-2 border-dashed rounded p-3 text-center text-secondary fst-italic cursor-pointer">
                     Add a comment...
                   </div>
                 )}
@@ -397,21 +155,22 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, users, isOpen
             </div>
           </div>
 
-          <div style={sidebarStyles}>
-            <div style={sidebarSectionStyles}>
-              <h3 style={sectionTitleStyles}>Priority & Status</h3>
+          <div className="task-modal-sidebar" style={{ width: '240px', flexShrink: 0 }}>
+            <div className="task-modal-sidebar-section bg-light rounded p-3 mb-3 border">
+              <h3 className="small fw-semibold text-dark text-uppercase mb-3">Priority & Status</h3>
               <div 
+                className="d-inline-block rounded-pill px-3 py-2 small fw-semibold text-uppercase mb-2"
                 style={{
-                  ...priorityTagStyles,
                   color: getPriorityColor(task.priority),
                   backgroundColor: getPriorityBgColor(task.priority),
                 }}
               >
                 {task.priority}
               </div>
+              <div className="d-block"></div>
               <div 
+                className="d-inline-block rounded-pill px-3 py-2 small fw-semibold text-uppercase mb-2"
                 style={{
-                  ...statusTagStyles,
                   color: getStatusColor(task.status),
                   backgroundColor: getStatusBgColor(task.status),
                 }}
@@ -420,52 +179,50 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, users, isOpen
               </div>
             </div>
 
-            <div style={sidebarSectionStyles}>
-              <h3 style={sectionTitleStyles}>Due Date</h3>
-              <div style={infoItemStyles}>
+            <div className="task-modal-sidebar-section bg-light rounded p-3 mb-3 border">
+              <h3 className="small fw-semibold text-dark text-uppercase mb-3">Due Date</h3>
+              <div className="d-flex align-items-center gap-2 small text-secondary fw-medium mb-2">
                 <span className="material-icons" style={{ fontSize: '16px' }}>event</span>
                 {task.dueDate}
               </div>
             </div>
 
-            <div style={sidebarSectionStyles}>
-              <h3 style={sectionTitleStyles}>Team</h3>
-              <div style={{ marginBottom: '12px' }}>
-                <div style={{ fontSize: '12px', fontWeight: '600', color: '#6B7280', marginBottom: '6px' }}>Assignees</div>
-                <div style={assigneesContainerStyles}>
+            <div className="task-modal-sidebar-section bg-light rounded p-3 mb-3 border">
+              <h3 className="small fw-semibold text-dark text-uppercase mb-3">Team</h3>
+              <div className="mb-3">
+                <div className="small fw-semibold text-secondary mb-2">Assignees</div>
+                <div className="d-flex flex-column gap-2">
                   {getAssignees().map(user => (
-                    <div key={user.id} style={assigneeStyles}>
-                      <div style={assigneeAvatarStyles}>
-                        {user.avatar}
-                      </div>
-                      {user.name}
+                    <div key={user.id} className="d-flex align-items-center gap-2 p-2 bg-white rounded border">
+                      <div className="task-modal-avatar-small">{user.avatar}</div>
+                      <span className="small fw-medium text-dark">{user.name}</span>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: '12px', fontWeight: '600', color: '#6B7280', marginBottom: '6px' }}>Reviewer</div>
-                <div style={assigneesContainerStyles}>
-                  <div style={assigneeStyles}>
-                    <div style={assigneeAvatarStyles}>RS</div>
-                    Review Supervisor
+                <div className="small fw-semibold text-secondary mb-2">Reviewer</div>
+                <div className="d-flex flex-column gap-2">
+                  <div className="d-flex align-items-center gap-2 p-2 bg-white rounded border">
+                    <div className="task-modal-avatar-small">RS</div>
+                    <span className="small fw-medium text-dark">Review Supervisor</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div style={sidebarSectionStyles}>
-              <h3 style={sectionTitleStyles}>Metrics</h3>
-              <div style={metricsContainerStyles}>
-                <div style={metricStyles}>
+            <div className="task-modal-sidebar-section bg-light rounded p-3 border">
+              <h3 className="small fw-semibold text-dark text-uppercase mb-3">Metrics</h3>
+              <div className="d-flex flex-column gap-2">
+                <div className="d-flex align-items-center gap-2 small text-secondary fw-medium p-2 bg-white rounded border">
                   <span className="material-icons" style={{ fontSize: '16px' }}>comment</span>
                   {task.comments} Comments
                 </div>
-                <div style={metricStyles}>
+                <div className="d-flex align-items-center gap-2 small text-secondary fw-medium p-2 bg-white rounded border">
                   <span className="material-icons" style={{ fontSize: '16px' }}>link</span>
                   {task.links} Links
                 </div>
-                <div style={metricStyles}>
+                <div className="d-flex align-items-center gap-2 small text-secondary fw-medium p-2 bg-white rounded border">
                   <span className="material-icons" style={{ fontSize: '16px' }}>assessment</span>
                   Progress: {task.progress}
                 </div>

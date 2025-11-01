@@ -12,7 +12,7 @@ interface Task {
   comments: number;
   links: number;
   progress: string;
-  type: string; // Added task type for permission checking
+  type: string;
 }
 
 interface Column {
@@ -44,25 +44,9 @@ interface BoardProps {
 }
 
 const Board: React.FC<BoardProps> = ({ data, onDragStart, onDragOver, onDrop, onTaskClick }) => {
-  const boardStyles: React.CSSProperties = {
-    padding: '20px',
-    minHeight: 'calc(100vh - 160px)',
-    maxWidth: '1400px',
-    margin: '0 auto',
-    background: '#F4F6F8',
-  };
-
-  const boardContentStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: '16px',
-    alignItems: 'flex-start',
-    overflowX: 'auto',
-    paddingBottom: '16px',
-  };
-
   return (
-    <div style={boardStyles}>
-      <div style={boardContentStyles}>
+    <div className="p-4" style={{ minHeight: 'calc(100vh - 160px)', maxWidth: '1400px', margin: '0 auto', background: '#F4F6F8' }}>
+      <div className="d-flex gap-3 align-items-start overflow-auto pb-3">
         {data.columnOrder.map(columnId => {
           const column = data.columns[columnId];
           const tasks = column.taskIds.map(taskId => data.tasks[taskId]);

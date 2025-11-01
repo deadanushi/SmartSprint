@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
+import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
 import { useSidebar } from '../contexts/SidebarContext';
 import { 
@@ -23,261 +24,6 @@ const CalendarPage: React.FC = () => {
   const [showEventModal, setShowEventModal] = useState(false);
   const [showSprintModal, setShowSprintModal] = useState(false);
 
-  const pageStyles: React.CSSProperties = {
-    marginLeft: isCollapsed ? '80px' : '280px',
-    minHeight: '100vh',
-    background: '#F4F6F8',
-    transition: 'margin-left 0.3s ease',
-  };
-
-  const breadcrumbStyles: React.CSSProperties = {
-    padding: '12px 24px',
-    background: '#FFFFFF',
-    borderBottom: '1px solid #F4F6F8',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '13px',
-    color: '#6B7280',
-  };
-
-  const breadcrumbLinkStyles: React.CSSProperties = {
-    color: '#0056D2',
-    textDecoration: 'none',
-    cursor: 'pointer',
-  };
-
-  const headerStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '24px',
-    margin: '24px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#111827',
-    margin: '0 0 8px 0',
-  };
-
-  const subtitleStyles: React.CSSProperties = {
-    fontSize: '16px',
-    color: '#6B7280',
-    margin: '0 0 24px 0',
-  };
-
-  const controlsStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: '16px',
-  };
-
-  const viewToggleStyles: React.CSSProperties = {
-    display: 'flex',
-    background: '#F3F4F6',
-    borderRadius: '8px',
-    padding: '4px',
-  };
-
-  const viewButtonStyles: React.CSSProperties = {
-    padding: '8px 16px',
-    border: 'none',
-    background: 'transparent',
-    borderRadius: '6px',
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#6B7280',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  };
-
-  const activeViewButtonStyles: React.CSSProperties = {
-    ...viewButtonStyles,
-    background: '#FFFFFF',
-    color: '#111827',
-    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
-  };
-
-  const navigationStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-  };
-
-  const navButtonStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    border: '1px solid #D1D5DB',
-    borderRadius: '6px',
-    padding: '8px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.2s ease',
-  };
-
-  const dateDisplayStyles: React.CSSProperties = {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#111827',
-    minWidth: '200px',
-    textAlign: 'center',
-  };
-
-  const contentStyles: React.CSSProperties = {
-    padding: '0 24px 24px 24px',
-  };
-
-  const calendarGridStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    marginBottom: '24px',
-  };
-
-  const monthHeaderStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(7, 1fr)',
-    gap: '1px',
-    marginBottom: '8px',
-  };
-
-  const dayHeaderStyles: React.CSSProperties = {
-    padding: '12px',
-    textAlign: 'center',
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#6B7280',
-    background: '#F9FAFB',
-    borderRadius: '6px',
-  };
-
-  const monthGridStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(7, 1fr)',
-    gap: '1px',
-    minHeight: '500px',
-  };
-
-  const dayCellStyles: React.CSSProperties = {
-    minHeight: '80px',
-    padding: '8px',
-    border: '1px solid #F3F4F6',
-    background: '#FFFFFF',
-    borderRadius: '6px',
-    position: 'relative',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  };
-
-  const todayCellStyles: React.CSSProperties = {
-    ...dayCellStyles,
-    background: '#EFF6FF',
-    borderColor: '#3B82F6',
-  };
-
-  const otherMonthCellStyles: React.CSSProperties = {
-    ...dayCellStyles,
-    background: '#F9FAFB',
-    color: '#9CA3AF',
-  };
-
-  const dayNumberStyles: React.CSSProperties = {
-    fontSize: '14px',
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: '4px',
-  };
-
-  const otherMonthDayNumberStyles: React.CSSProperties = {
-    ...dayNumberStyles,
-    color: '#9CA3AF',
-  };
-
-  const eventStyles: React.CSSProperties = {
-    fontSize: '11px',
-    padding: '2px 6px',
-    borderRadius: '4px',
-    marginBottom: '2px',
-    cursor: 'pointer',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    fontWeight: '500',
-  };
-
-  const sprintCardStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '20px',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-    marginBottom: '16px',
-    border: '1px solid #F4F6F8',
-  };
-
-  const sprintHeaderStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: '12px',
-  };
-
-  const sprintTitleStyles: React.CSSProperties = {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 4px 0',
-  };
-
-  const sprintStatusStyles: React.CSSProperties = {
-    fontSize: '12px',
-    fontWeight: '600',
-    padding: '4px 8px',
-    borderRadius: '12px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  };
-
-  const sprintMetaStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: '16px',
-    fontSize: '14px',
-    color: '#6B7280',
-    marginBottom: '12px',
-  };
-
-  const sprintProgressStyles: React.CSSProperties = {
-    marginBottom: '12px',
-  };
-
-  const progressBarStyles: React.CSSProperties = {
-    width: '100%',
-    height: '8px',
-    background: '#F3F4F6',
-    borderRadius: '4px',
-    overflow: 'hidden',
-    marginBottom: '4px',
-  };
-
-  const progressFillStyles: React.CSSProperties = {
-    height: '100%',
-    background: '#3B82F6',
-    borderRadius: '4px',
-    transition: 'width 0.3s ease',
-  };
-
-  const progressTextStyles: React.CSSProperties = {
-    fontSize: '12px',
-    color: '#6B7280',
-    fontWeight: '500',
-  };
-
-  // Calendar logic
   const getDaysInMonth = (date: Date) => {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   };
@@ -308,20 +54,17 @@ const CalendarPage: React.FC = () => {
     const firstDay = getFirstDayOfMonth(currentDate);
     const days = [];
 
-    // Previous month days
     const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
     const daysInPrevMonth = getDaysInMonth(prevMonth);
     for (let i = firstDay - 1; i >= 0; i--) {
       const day = daysInPrevMonth - i;
-      const date = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), day);
       days.push(
-        <div key={`prev-${day}`} style={otherMonthCellStyles}>
-          <div style={otherMonthDayNumberStyles}>{day}</div>
+        <div key={`prev-${day}`} className="calendar-day-cell calendar-day-other-month">
+          <div className="calendar-day-number text-secondary">{day}</div>
         </div>
       );
     }
 
-    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const isToday = date.toDateString() === new Date().toDateString();
@@ -331,59 +74,37 @@ const CalendarPage: React.FC = () => {
       days.push(
         <div 
           key={day} 
-          style={isToday ? todayCellStyles : dayCellStyles}
-          onMouseEnter={(e) => {
-            if (!isToday) {
-              e.currentTarget.style.background = '#F9FAFB';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isToday) {
-              e.currentTarget.style.background = '#FFFFFF';
-            }
-          }}
+          className={clsx('calendar-day-cell', { 'calendar-day-today': isToday })}
         >
-          <div style={dayNumberStyles}>{day}</div>
+          <div className="calendar-day-number">{day}</div>
           {events.slice(0, 3).map(event => (
             <div
               key={event.id}
-              style={{
-                ...eventStyles,
-                background: event.color,
-                color: '#FFFFFF',
-              }}
+              className="calendar-event-item text-white cursor-pointer"
+              style={{ background: event.color }}
               onClick={() => {
                 setSelectedEvent(event);
                 setShowEventModal(true);
               }}
             >
-              <span className="material-icons" style={{ fontSize: '10px', marginRight: '2px' }}>
-                {getEventTypeIcon(event.type)}
-              </span>
+              <span className="material-icons calendar-event-icon">{getEventTypeIcon(event.type)}</span>
               {event.title}
             </div>
           ))}
           {events.length > 3 && (
-            <div style={{ ...eventStyles, background: '#6B7280', color: '#FFFFFF' }}>
+            <div className="calendar-event-item bg-secondary text-white">
               +{events.length - 3} more
             </div>
           )}
           {sprints.length > 0 && (
             <div
-              style={{
-                ...eventStyles,
-                background: '#8B5CF6',
-                color: '#FFFFFF',
-                fontWeight: '600',
-              }}
+              className="calendar-event-item bg-primary text-white fw-semibold cursor-pointer"
               onClick={() => {
                 setSelectedSprint(sprints[0]);
                 setShowSprintModal(true);
               }}
             >
-              <span className="material-icons" style={{ fontSize: '10px', marginRight: '2px' }}>
-                sprint
-              </span>
+              <span className="material-icons calendar-event-icon">sprint</span>
               {sprints[0].name}
             </div>
           )}
@@ -391,13 +112,12 @@ const CalendarPage: React.FC = () => {
       );
     }
 
-    // Next month days
-    const totalCells = 42; // 6 weeks * 7 days
+    const totalCells = 42;
     const remainingCells = totalCells - days.length;
     for (let day = 1; day <= remainingCells; day++) {
       days.push(
-        <div key={`next-${day}`} style={otherMonthCellStyles}>
-          <div style={otherMonthDayNumberStyles}>{day}</div>
+        <div key={`next-${day}`} className="calendar-day-cell calendar-day-other-month">
+          <div className="calendar-day-number text-secondary">{day}</div>
         </div>
       );
     }
@@ -425,7 +145,6 @@ const CalendarPage: React.FC = () => {
   const getSprintProgress = (sprint: Sprint) => {
     if (sprint.status === 'completed') return 100;
     if (sprint.status === 'planning') return 0;
-    // Calculate based on completed tasks or time elapsed
     const startDate = new Date(sprint.startDate);
     const endDate = new Date(sprint.endDate);
     const now = new Date();
@@ -435,116 +154,77 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <div style={pageStyles}>
-      <div style={breadcrumbStyles}>
-        <span style={{ cursor: 'pointer' }}>←</span>
-        <span style={breadcrumbLinkStyles}>Team spaces</span>
+    <div className="page-container" style={{ marginLeft: isCollapsed ? '80px' : '280px', transition: 'margin-left 0.3s ease' }}>
+      <div className="breadcrumb bg-white px-3 py-2 border-bottom d-flex align-items-center gap-2 small text-secondary">
+        <span className="cursor-pointer">←</span>
+        <span className="text-primary text-decoration-none cursor-pointer">Team spaces</span>
         <span>›</span>
         <span>Calendar</span>
       </div>
 
-      <div style={headerStyles}>
-        <h1 style={titleStyles}>Project Calendar</h1>
-        <p style={subtitleStyles}>
+      <div className="bg-white rounded-3 p-4 m-3 shadow-sm">
+        <h1 className="display-6 fw-bold text-dark mb-2">Project Calendar</h1>
+        <p className="fs-6 text-secondary mb-4">
           View sprints, deadlines, meetings, and project milestones
         </p>
         
-        <div style={controlsStyles}>
-          <div style={viewToggleStyles}>
-            <button
-              style={currentView === 'month' ? activeViewButtonStyles : viewButtonStyles}
-              onClick={() => setCurrentView('month')}
-            >
-              Month
-            </button>
-            <button
-              style={currentView === 'week' ? activeViewButtonStyles : viewButtonStyles}
-              onClick={() => setCurrentView('week')}
-            >
-              Week
-            </button>
-            <button
-              style={currentView === 'day' ? activeViewButtonStyles : viewButtonStyles}
-              onClick={() => setCurrentView('day')}
-            >
-              Day
-            </button>
-            <button
-              style={currentView === 'agenda' ? activeViewButtonStyles : viewButtonStyles}
-              onClick={() => setCurrentView('agenda')}
-            >
-              Agenda
-            </button>
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <div className="calendar-view-toggle bg-light rounded p-1 d-flex">
+            {(['month', 'week', 'day', 'agenda'] as const).map(view => (
+              <button
+                key={view}
+                className={clsx('btn btn-sm border-0 rounded', { 'bg-white shadow-sm fw-semibold': currentView === view, 'text-secondary': currentView !== view })}
+                onClick={() => setCurrentView(view)}
+                style={{ textTransform: 'capitalize' }}
+              >
+                {view}
+              </button>
+            ))}
           </div>
 
-          <div style={navigationStyles}>
-            <button
-              style={navButtonStyles}
-              onClick={() => navigateMonth('prev')}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}
-            >
+          <div className="d-flex align-items-center gap-3">
+            <button className="btn btn-outline-secondary btn-sm rounded" onClick={() => navigateMonth('prev')}>
               <span className="material-icons" style={{ fontSize: '18px' }}>chevron_left</span>
             </button>
-            <div style={dateDisplayStyles}>
+            <div className="fw-semibold text-dark" style={{ minWidth: '200px', textAlign: 'center' }}>
               {formatDate(currentDate)}
             </div>
-            <button
-              style={navButtonStyles}
-              onClick={() => navigateMonth('next')}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#F9FAFB'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#FFFFFF'}
-            >
+            <button className="btn btn-outline-secondary btn-sm rounded" onClick={() => navigateMonth('next')}>
               <span className="material-icons" style={{ fontSize: '18px' }}>chevron_right</span>
             </button>
-            <button
-              style={{
-                ...navButtonStyles,
-                background: '#2563EB',
-                color: '#FFFFFF',
-                padding: '8px 16px',
-              }}
-              onClick={() => setCurrentDate(new Date())}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#1D4ED8'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#2563EB'}
-            >
+            <button className="btn btn-primary btn-sm" onClick={() => setCurrentDate(new Date())}>
               Today
             </button>
           </div>
         </div>
       </div>
 
-      <div style={contentStyles}>
+      <div className="px-3 pb-3">
         {currentView === 'month' && (
-          <div style={calendarGridStyles}>
-            <div style={monthHeaderStyles}>
+          <div className="calendar-grid bg-white rounded-3 p-3 shadow-sm mb-4">
+            <div className="calendar-month-header d-grid mb-2" style={{ gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px' }}>
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} style={dayHeaderStyles}>{day}</div>
+                <div key={day} className="calendar-day-header bg-light rounded p-2 text-center small fw-semibold text-secondary">{day}</div>
               ))}
             </div>
-            <div style={monthGridStyles}>
+            <div className="calendar-month-grid d-grid" style={{ gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px', minHeight: '500px' }}>
               {renderMonthView()}
             </div>
           </div>
         )}
 
-        {/* Active Sprints Section */}
-        <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', margin: '0 0 16px 0' }}>
-            Active Sprints
-          </h2>
+        <div className="mb-4">
+          <h2 className="h5 fw-semibold text-dark mb-3">Active Sprints</h2>
           {mockSprints.filter(sprint => sprint.status === 'active').map(sprint => (
-            <div key={sprint.id} style={sprintCardStyles}>
-              <div style={sprintHeaderStyles}>
+            <div key={sprint.id} className="calendar-sprint-card bg-white rounded-3 p-4 shadow-sm border mb-3">
+              <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
-                  <h3 style={sprintTitleStyles}>{sprint.name}</h3>
-                  <p style={{ fontSize: '14px', color: '#6B7280', margin: '0' }}>
-                    {sprint.description}
-                  </p>
+                  <h3 className="h6 fw-semibold text-dark mb-1">{sprint.name}</h3>
+                  <p className="small text-secondary mb-0">{sprint.description}</p>
                 </div>
                 <div
+                  className="small fw-semibold rounded-pill px-2 py-1 text-uppercase"
                   style={{
-                    ...sprintStatusStyles,
                     color: getSprintStatusColor(sprint.status),
                     backgroundColor: getSprintStatusBgColor(sprint.status),
                   }}
@@ -553,23 +233,21 @@ const CalendarPage: React.FC = () => {
                 </div>
               </div>
               
-              <div style={sprintMetaStyles}>
-                <span><span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>event</span> {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}</span>
-                <span><span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>flag</span> {sprint.goal}</span>
-                <span><span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>group</span> {sprint.teamMembers.length} members</span>
-                <span><span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>assessment</span> Capacity: {sprint.capacity}h</span>
+              <div className="d-flex gap-3 small text-secondary mb-3 flex-wrap">
+                <span><span className="material-icons align-middle" style={{ fontSize: '14px' }}>event</span> {new Date(sprint.startDate).toLocaleDateString()} - {new Date(sprint.endDate).toLocaleDateString()}</span>
+                <span><span className="material-icons align-middle" style={{ fontSize: '14px' }}>flag</span> {sprint.goal}</span>
+                <span><span className="material-icons align-middle" style={{ fontSize: '14px' }}>group</span> {sprint.teamMembers.length} members</span>
+                <span><span className="material-icons align-middle" style={{ fontSize: '14px' }}>assessment</span> Capacity: {sprint.capacity}h</span>
               </div>
               
-              <div style={sprintProgressStyles}>
-                <div style={progressBarStyles}>
+              <div className="mb-2">
+                <div className="progress" style={{ height: '8px' }}>
                   <div 
-                    style={{
-                      ...progressFillStyles,
-                      width: `${getSprintProgress(sprint)}%`,
-                    }}
+                    className="progress-bar"
+                    style={{ width: `${getSprintProgress(sprint)}%` }}
                   />
                 </div>
-                <div style={progressTextStyles}>
+                <div className="small text-secondary fw-medium mt-1">
                   {Math.round(getSprintProgress(sprint))}% complete
                 </div>
               </div>
@@ -577,27 +255,22 @@ const CalendarPage: React.FC = () => {
           ))}
         </div>
 
-        {/* Upcoming Events Section */}
         <div>
-          <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#111827', margin: '0 0 16px 0' }}>
-            Upcoming Events
-          </h2>
+          <h2 className="h5 fw-semibold text-dark mb-3">Upcoming Events</h2>
           {mockCalendarEvents
             .filter(event => new Date(event.startDate) >= new Date())
             .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
             .slice(0, 5)
             .map(event => (
-              <div key={event.id} style={sprintCardStyles}>
-                <div style={sprintHeaderStyles}>
+              <div key={event.id} className="calendar-sprint-card bg-white rounded-3 p-4 shadow-sm border mb-3">
+                <div className="d-flex justify-content-between align-items-start mb-3">
                   <div>
-                    <h3 style={sprintTitleStyles}>{event.title}</h3>
-                    <p style={{ fontSize: '14px', color: '#6B7280', margin: '0' }}>
-                      {event.description}
-                    </p>
+                    <h3 className="h6 fw-semibold text-dark mb-1">{event.title}</h3>
+                    <p className="small text-secondary mb-0">{event.description}</p>
                   </div>
                   <div
+                    className="small fw-semibold rounded-pill px-2 py-1"
                     style={{
-                      ...sprintStatusStyles,
                       color: getEventTypeColor(event.type),
                       backgroundColor: `${getEventTypeColor(event.type)}20`,
                     }}
@@ -606,11 +279,11 @@ const CalendarPage: React.FC = () => {
                   </div>
                 </div>
                 
-                <div style={sprintMetaStyles}>
-                  <span><span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>event</span> {new Date(event.startDate).toLocaleDateString()}</span>
-                  {event.location && <span><span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>location_on</span> {event.location}</span>}
-                  <span><span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>person</span> {event.assignees.length} assignees</span>
-                  <span><span className="material-icons" style={{ fontSize: '14px', verticalAlign: 'middle' }}>bolt</span> {event.priority} priority</span>
+                <div className="d-flex gap-3 small text-secondary flex-wrap">
+                  <span><span className="material-icons align-middle" style={{ fontSize: '14px' }}>event</span> {new Date(event.startDate).toLocaleDateString()}</span>
+                  {event.location && <span><span className="material-icons align-middle" style={{ fontSize: '14px' }}>location_on</span> {event.location}</span>}
+                  <span><span className="material-icons align-middle" style={{ fontSize: '14px' }}>person</span> {event.assignees.length} assignees</span>
+                  <span><span className="material-icons align-middle" style={{ fontSize: '14px' }}>bolt</span> {event.priority} priority</span>
                 </div>
               </div>
             ))}

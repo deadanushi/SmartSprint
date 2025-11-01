@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
 import AlertModal from '../components/AlertModal';
 
@@ -62,183 +63,28 @@ const LoginPage: React.FC = () => {
     setModalOpen(true);
   };
 
-  const pageStyles: React.CSSProperties = {
-    minHeight: 'calc(100vh - 88px)',
-    background: '#F6F8FC',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
-  };
-
-  const cardStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '16px',
-    padding: '48px',
-    width: '100%',
-    maxWidth: '520px',
-    boxShadow: '0 10px 28px rgba(2, 6, 23, 0.08)',
-    border: '1px solid #E5E7EB',
-  };
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: '20px',
-    fontWeight: 800,
-    color: '#0F172A',
-    margin: '0 0 6px 0',
-    textAlign: 'center',
-  };
-
-  const subtitleStyles: React.CSSProperties = {
-    fontSize: '13px',
-    color: '#64748B',
-    margin: '0 0 20px 0',
-    textAlign: 'center',
-  };
-
-  const formStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    rowGap: '14px',
-  };
-
-  const errorTextStyles: React.CSSProperties = {
-    color: '#DC2626',
-    fontSize: '12px',
-    marginTop: '4px',
-  };
-
-  const fullRow: React.CSSProperties = {
-    gridColumn: '1 / -1',
-  };
-
-  const inputGroupStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  };
-
-  const labelStyles: React.CSSProperties = {
-    fontSize: '13px',
-    fontWeight: 700,
-    color: '#334155',
-  };
-
-  const inputStyles: React.CSSProperties = {
-    height: '30px',
-    padding: '12px 14px',
-    border: '1px solid #E5E7EB',
-    borderRadius: '10px',
-    fontSize: '14px',
-    transition: 'all 0.2s ease',
-    outline: 'none',
-    background: '#FFFFFF',
-    width: '100%'
-  };
-
-  const buttonStyles: React.CSSProperties = {
-    background: '#0B1324',
-    color: 'white',
-    border: 'none',
-    borderRadius: '10px',
-    height: '48px',
-    fontSize: '15px',
-    fontWeight: 800,
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    width: '100%'
-  };
-
-  const disabledButtonStyles: React.CSSProperties = {
-    ...buttonStyles,
-    background: '#94A3B8',
-    cursor: 'not-allowed',
-  };
-
-  const dividerStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    margin: '18px 0',
-    gap: '14px',
-  };
-
-  const dividerLineStyles: React.CSSProperties = {
-    flex: 1,
-    height: '1px',
-    background: '#E5E7EB',
-  };
-
-  const dividerTextStyles: React.CSSProperties = {
-    fontSize: '12px',
-    color: '#94A3B8',
-    fontWeight: 700,
-  };
-
-  const linkStyles: React.CSSProperties = {
-    color: '#0F172A',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: 700,
-    transition: 'color 0.2s ease',
-  };
-
-  const footerStyles: React.CSSProperties = {
-    textAlign: 'center',
-    marginTop: '10px',
-    fontSize: '13px',
-    color: '#64748B',
-  };
-
-  const oauthIconRowStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '12px',
-    marginTop: '10px',
-  };
-
-  const oauthIconStyles: React.CSSProperties = {
-    width: '40px',
-    height: '40px',
-    borderRadius: '50%',
-    border: '1px solid #E5E7EB',
-    background: '#FFFFFF',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    boxShadow: '0 2px 6px rgba(2, 6, 23, 0.06)'
-  };
-
   return (
-    <div style={pageStyles}>
-      <div style={cardStyles}>
-        <h2 style={titleStyles}>Welcome back</h2>
-        <p style={subtitleStyles}>Sign in to your account to continue</p>
+    <div className="login-page min-vh-100 d-flex align-items-center justify-content-center py-5">
+      <div className="login-card bg-white rounded-4 p-5 w-100" style={{ maxWidth: '480px' }}>
+        <div className="text-center mb-4">
+          <h1 className="h3 fw-bold mb-2" style={{ color: '#0F172A', fontSize: '20px', fontWeight: 800 }}>Welcome back</h1>
+          <p className="mb-0" style={{ color: '#64748B', fontSize: '13px' }}>Sign in to your account to continue</p>
+        </div>
 
         {error && (
-          <div style={{
-            background: '#FEF2F2',
-            border: '1px solid #FEE2E2',
-            borderRadius: '10px',
-            padding: '12px',
-            marginBottom: '12px',
-            color: '#DC2626',
-            fontSize: '14px',
-          }}>
-            {error}
+          <div className="alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert">
+            <span className="material-icons" style={{ fontSize: '20px' }}>error</span>
+            <span>{error}</span>
           </div>
         )}
 
-        <form style={formStyles} onSubmit={handleSubmit}>
-          <div style={{ ...inputGroupStyles, ...fullRow }}>
-            <label style={labelStyles}>Email address</label>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label fw-bold mb-1" style={{ fontSize: '13px', color: '#334155' }}>Email address</label>
             <input
               type="email"
+              id="email"
+              className="form-control"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -249,16 +95,24 @@ const LoginPage: React.FC = () => {
                 else if (!validateEmail(email)) setFieldErrors(prev => ({ ...prev, email: 'Enter a valid email address' }));
               }}
               placeholder="Enter your email"
-              style={inputStyles}
               required
+              disabled={isLoading}
+              style={{ 
+                height: '46px',
+                borderRadius: '10px',
+                border: '1px solid #E5E7EB',
+                fontSize: '14px',
+                padding: '12px 14px'
+              }}
             />
-            {fieldErrors.email && <div style={errorTextStyles}>{fieldErrors.email}</div>}
           </div>
 
-          <div style={{ ...inputGroupStyles, ...fullRow }}>
-            <label style={labelStyles}>Password</label>
+          <div className="mb-4">
+            <label htmlFor="password" className="form-label fw-bold mb-1" style={{ fontSize: '13px', color: '#334155' }}>Password</label>
             <input
               type="password"
+              id="password"
+              className="form-control"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -269,72 +123,83 @@ const LoginPage: React.FC = () => {
                 else if (password.length < 8) setFieldErrors(prev => ({ ...prev, password: 'Password must be at least 8 characters' }));
               }}
               placeholder="Enter your password"
-              style={inputStyles}
               required
+              disabled={isLoading}
+              style={{ 
+                height: '46px',
+                borderRadius: '10px',
+                border: '1px solid #E5E7EB',
+                fontSize: '14px',
+                padding: '12px 14px'
+              }}
             />
-            {fieldErrors.password && <div style={errorTextStyles}>{fieldErrors.password}</div>}
           </div>
 
-          <div style={{ ...fullRow, marginTop: '6px' }}>
-            <button
-              type="submit"
-              style={isLoading ? disabledButtonStyles : buttonStyles}
-              disabled={isLoading}
-              onMouseEnter={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.background = '#0A0F1F';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isLoading) {
-                  e.currentTarget.style.background = '#0B1324';
-                }
-              }}
-            >
-              {isLoading ? (
-                <>
-                  <span className="material-icons" style={{ fontSize: '16px' }}>hourglass_empty</span>
-                  Signing in...
-                </>
-              ) : (
-                'Sign in'
-              )}
-            </button>
+          <button
+            type="submit"
+            className="btn w-100 mb-4 fw-bold d-flex align-items-center justify-content-center gap-2"
+            disabled={isLoading}
+            style={{ 
+              height: '46px',
+              borderRadius: '10px',
+              background: isLoading ? '#94A3B8' : '#0056D2',
+              color: 'white',
+              fontSize: '15px',
+              border: 'none'
+            }}
+          >
+            {isLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Signing in...
+              </>
+            ) : (
+              'Sign in'
+            )}
+          </button>
 
-            {/* Round OAuth icons */}
-            <div style={oauthIconRowStyles}>
-              <button
-                type="button"
-                title="Continue with Google"
-                style={oauthIconStyles}
-                onClick={() => openComingSoon('Google')}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
-              >
-                <span style={{ color: '#EA4335', fontWeight: 900 }}>G</span>
-              </button>
-              <button
-                type="button"
-                title="Continue with GitHub"
-                style={oauthIconStyles}
-                onClick={() => openComingSoon('GitHub')}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
-              >
-                <span style={{ color: '#0F172A', fontWeight: 900 }}>GH</span>
-              </button>
-            </div>
+          <div className="d-flex justify-content-center gap-3 mb-4">
+            <button
+              type="button"
+              className="btn rounded-circle d-flex align-items-center justify-content-center"
+              style={{ 
+                width: '40px', 
+                height: '40px',
+                border: '1px solid #E5E7EB',
+                background: '#FFFFFF',
+                boxShadow: '0 2px 6px rgba(2, 6, 23, 0.06)'
+              }}
+              title="Continue with Google"
+              onClick={() => openComingSoon('Google')}
+            >
+              <span className="text-danger fw-bold">G</span>
+            </button>
+            <button
+              type="button"
+              className="btn rounded-circle d-flex align-items-center justify-content-center"
+              style={{ 
+                width: '40px', 
+                height: '40px',
+                border: '1px solid #E5E7EB',
+                background: '#FFFFFF',
+                boxShadow: '0 2px 6px rgba(2, 6, 23, 0.06)'
+              }}
+              title="Continue with GitHub"
+              onClick={() => openComingSoon('GitHub')}
+            >
+              <span className="text-dark fw-bold">GH</span>
+            </button>
           </div>
         </form>
 
-        <div style={dividerStyles}>
-          <div style={dividerLineStyles}></div>
-          <span style={dividerTextStyles}>Don't have an account?</span>
-          <div style={dividerLineStyles}></div>
+        <div className="d-flex align-items-center my-4 gap-3">
+          <hr className="flex-grow-1" style={{ borderColor: '#E5E7EB', margin: 0 }} />
+          <span className="fw-bold" style={{ fontSize: '12px', color: '#94A3B8' }}>Don't have an account?</span>
+          <hr className="flex-grow-1" style={{ borderColor: '#E5E7EB', margin: 0 }} />
         </div>
 
-        <div style={footerStyles}>
-          <Link to="/register" style={linkStyles}>
+        <div className="text-center">
+          <Link to="/register" className="text-decoration-none fw-bold" style={{ color: '#0056D2', fontSize: '14px' }}>
             Create an account
           </Link>
         </div>

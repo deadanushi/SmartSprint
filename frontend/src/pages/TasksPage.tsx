@@ -16,7 +16,7 @@ interface Task {
   comments: number;
   links: number;
   progress: string;
-  type: string; // Added task type for permission checking
+  type: string;
 }
 
 interface Column {
@@ -72,7 +72,6 @@ const TasksPage: React.FC = () => {
   };
 
   const moveTask = (taskId: string, newColumnId: string) => {
-    // Find current column
     let currentColumnId = '';
     for (const [columnId, column] of Object.entries(data.columns)) {
       if (column.taskIds.includes(taskId)) {
@@ -82,18 +81,15 @@ const TasksPage: React.FC = () => {
     }
 
     if (currentColumnId === newColumnId) {
-      return; // Task is already in this column
+      return;
     }
 
-    // Remove task from current column
     const currentColumn = data.columns[currentColumnId];
     const newCurrentTaskIds = currentColumn.taskIds.filter(id => id !== taskId);
 
-    // Add task to new column
     const newColumn = data.columns[newColumnId];
     const newTargetTaskIds = [...newColumn.taskIds, taskId];
 
-    // Update state
     setData(prevData => ({
       ...prevData,
       columns: {
@@ -110,35 +106,11 @@ const TasksPage: React.FC = () => {
     }));
   };
 
-  const pageStyles: React.CSSProperties = {
-    marginLeft: isCollapsed ? '80px' : '280px',
-    minHeight: '100vh',
-    background: '#F4F6F8',
-    transition: 'margin-left 0.3s ease',
-  };
-
-  const breadcrumbStyles: React.CSSProperties = {
-    padding: '12px 24px',
-    background: '#FFFFFF',
-    borderBottom: '1px solid #F4F6F8',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '13px',
-    color: '#6B7280',
-  };
-
-  const breadcrumbLinkStyles: React.CSSProperties = {
-    color: '#0056D2',
-    textDecoration: 'none',
-    cursor: 'pointer',
-  };
-
   return (
-    <div style={pageStyles}>
-      <div style={breadcrumbStyles}>
-        <span style={{ cursor: 'pointer' }}>←</span>
-        <span style={breadcrumbLinkStyles}>Team spaces</span>
+    <div className="page-container" style={{ marginLeft: isCollapsed ? '80px' : '280px', transition: 'margin-left 0.3s ease' }}>
+      <div className="breadcrumb bg-white px-3 py-2 border-bottom d-flex align-items-center gap-2 small text-secondary">
+        <span className="cursor-pointer">←</span>
+        <span className="text-primary text-decoration-none cursor-pointer">Team spaces</span>
         <span>›</span>
         <span>Tasks</span>
       </div>

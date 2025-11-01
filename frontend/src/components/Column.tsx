@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
 import TaskCard from './TaskCard';
 
@@ -13,7 +14,7 @@ interface Task {
   comments: number;
   links: number;
   progress: string;
-  type: string; // Added task type for permission checking
+  type: string;
 }
 
 interface Column {
@@ -39,153 +40,36 @@ interface ColumnProps {
   onTaskClick: (task: Task) => void;
 }
 
-
 const Column: React.FC<ColumnProps> = ({ column, tasks, users, onDragStart, onDragOver, onDrop, onTaskClick }) => {
   const { hasPermission } = useUser();
-  const columnStyles: React.CSSProperties = {
-    background: '#FFFFFF',
-    borderRadius: '8px',
-    padding: '16px',
-    minHeight: '400px',
-    width: '280px',
-    flexShrink: 0,
-    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.08)',
-    border: '1px solid #F4F6F8',
-  };
-
-  const columnHeaderStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '16px',
-    paddingBottom: '12px',
-    borderBottom: '1px solid #F4F6F8',
-  };
-
-  const columnTitleSectionStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  };
-
-  const statusIndicatorStyles: React.CSSProperties = {
-    width: '8px',
-    height: '8px',
-    borderRadius: '50%',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
-  };
-
-  const columnTitleStyles: React.CSSProperties = {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#0D0D0D',
-    margin: '0',
-  };
-
-  const taskCountStyles: React.CSSProperties = {
-    background: '#0056D2',
-    color: 'white',
-    fontSize: '11px',
-    fontWeight: '600',
-    padding: '4px 8px',
-    borderRadius: '12px',
-    minWidth: '20px',
-    textAlign: 'center',
-    boxShadow: '0 1px 4px rgba(0, 86, 210, 0.3)',
-  };
-
-  const columnActionsStyles: React.CSSProperties = {
-    display: 'flex',
-    gap: '8px',
-  };
-
-  const addTaskBtnStyles: React.CSSProperties = {
-    background: '#0056D2',
-    border: 'none',
-    color: 'white',
-    fontSize: '16px',
-    cursor: 'pointer',
-    padding: '6px',
-    borderRadius: '6px',
-    width: '28px',
-    height: '28px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 1px 4px rgba(0, 86, 210, 0.3)',
-    transition: 'all 0.3s ease',
-  };
-
-  const moreOptionsBtnStyles: React.CSSProperties = {
-    background: '#F4F6F8',
-    border: 'none',
-    color: '#6B7280',
-    fontSize: '14px',
-    cursor: 'pointer',
-    padding: '6px',
-    borderRadius: '6px',
-    width: '28px',
-    height: '28px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.3s ease',
-  };
-
-  const taskListStyles: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    minHeight: '200px',
-  };
-
-  const draggingOverStyles: React.CSSProperties = {
-    ...taskListStyles,
-    background: 'rgba(0, 86, 210, 0.08)',
-    borderRadius: '8px',
-    padding: '12px',
-    border: '2px dashed #0056D2',
-  };
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   return (
-    <div style={columnStyles}>
-      <div style={columnHeaderStyles}>
-        <div style={columnTitleSectionStyles}>
+    <div className="column-container bg-white rounded p-3 shadow-sm border">
+      <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+        <div className="d-flex align-items-center gap-2">
           <div 
-            style={{
-              ...statusIndicatorStyles,
+            className="status-indicator rounded-circle"
+            style={{ 
+              width: '8px', 
+              height: '8px', 
               backgroundColor: column.statusColor,
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)'
             }}
           />
-          <h3 style={columnTitleStyles}>{column.title}</h3>
-          <div style={taskCountStyles}>{tasks.length}</div>
+          <h3 className="h6 fw-semibold text-dark mb-0">{column.title}</h3>
+          <div className="task-count-badge bg-primary text-white small fw-semibold rounded-pill px-2">
+            {tasks.length}
+          </div>
         </div>
-        <div style={columnActionsStyles}>
+        <div className="d-flex gap-2">
           {hasPermission('canCreateTasks') && (
-            <button 
-              style={addTaskBtnStyles}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#4DA3FF';
-                e.currentTarget.style.transform = 'scale(1.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#0056D2';
-                e.currentTarget.style.transform = 'scale(1)';
-              }}
-            >
+            <button className="btn btn-primary btn-sm p-1 rounded" style={{ width: '28px', height: '28px' }}>
               +
             </button>
           )}
           {hasPermission('canEditTasks') && (
-            <button 
-              style={moreOptionsBtnStyles}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#FFFFFF';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#F4F6F8';
-              }}
-            >
+            <button className="btn btn-outline-secondary btn-sm p-1 rounded" style={{ width: '28px', height: '28px' }}>
               ⋯
             </button>
           )}
@@ -193,19 +77,27 @@ const Column: React.FC<ColumnProps> = ({ column, tasks, users, onDragStart, onDr
       </div>
       
       <div 
-        style={taskListStyles}
-        onDragOver={onDragOver}
-        onDrop={(e) => onDrop(e, column.id)}
+        className={clsx('d-flex flex-column gap-3', { 'column-drag-over': isDraggingOver })}
+        onDragOver={(e) => {
+          onDragOver(e);
+          setIsDraggingOver(true);
+        }}
+        onDragLeave={() => setIsDraggingOver(false)}
+        onDrop={(e) => {
+          onDrop(e, column.id);
+          setIsDraggingOver(false);
+        }}
+        style={{ minHeight: '200px' }}
       >
         {tasks.map((task, index) => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              index={index}
-              users={users}
-              onDragStart={onDragStart}
-              onClick={onTaskClick}
-            />
+          <TaskCard
+            key={task.id}
+            task={task}
+            index={index}
+            users={users}
+            onDragStart={onDragStart}
+            onClick={onTaskClick}
+          />
         ))}
       </div>
     </div>

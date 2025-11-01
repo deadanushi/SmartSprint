@@ -67,8 +67,19 @@ async def startup_event():
         _open_swagger_after_start(1.0)
 
 # Routers
-from routes_users import router as users_router
+from routes.users import router as users_router
+from routes.roles import router as roles_router
+from routes.companies import router as companies_router
+from routes.permissions import router as permissions_router
+from routes.role_permissions import router as role_permissions_router
+from routes.user_permissions import router as user_permissions_router
+
 app.include_router(users_router)
+app.include_router(roles_router)
+app.include_router(companies_router)
+app.include_router(permissions_router)
+app.include_router(role_permissions_router)
+app.include_router(user_permissions_router)
 
 
 @app.get("/")
