@@ -1,8 +1,10 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import { useSidebar } from '../contexts/SidebarContext';
 import { useUser } from '../contexts/UserContext';
+import { useProjects } from '../contexts/ProjectContext';
+import ProjectCreationModal from './ProjectCreationModal';
 
 const getRoleDisplayName = (role: string): string => {
   const roleMap: { [key: string]: string } = {
@@ -24,12 +26,56 @@ const getRoleDisplayName = (role: string): string => {
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isCollapsed, setIsCollapsed } = useSidebar();
-  const { hasPermission, currentUser, logout } = useUser();
+  const { hasPermission, currentUser, logout, isProjectManager } = useUser();
+  const { projects, loading: projectsLoading } = useProjects();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [expandedProjects, setExpandedProjects] = useState<Set<number>>(new Set());
 
   const MaterialIcon: React.FC<{ name: string }> = ({ name }) => (
     <span className="material-icons" style={{ fontSize: '20px', color: 'inherit' }}>{name}</span>
   );
+
+  const handleCreateProject = (projectId: number) => {
+    navigate(`/project/${projectId}`);
+  };
+
+  // Check if user can create projects
+  const canCreateProjects = hasPermission('canCreateProjects');
+  // Check if user can view projects (either as PM or admin with canViewAllProjects)
+  const canViewProjects = isProjectManager() || hasPermission('canViewAllProjects');
+
+  const toggleProject = (projectId: number) => {
+    setExpandedProjects(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(projectId)) {
+        newSet.delete(projectId);
+      } else {
+        newSet.add(projectId);
+      }
+      return newSet;
+    });
+  };
+
+  const isProjectExpanded = (projectId: number) => expandedProjects.has(projectId);
+
+  const getCurrentProjectId = () => {
+    const match = location.pathname.match(/^\/project\/(\d+)/);
+    return match ? parseInt(match[1]) : null;
+  };
+
+  useEffect(() => {
+    const currentProjectId = getCurrentProjectId();
+    if (currentProjectId) {
+      setExpandedProjects(prev => {
+        if (!prev.has(currentProjectId)) {
+          return new Set(prev).add(currentProjectId);
+        }
+        return prev;
+      });
+    }
+  }, [location.pathname]);
 
   return (
     <div className={clsx('sidebar', { 'sidebar-collapsed': isCollapsed })} style={{ width: isCollapsed ? '80px' : '280px' }}>
@@ -138,27 +184,192 @@ const Sidebar: React.FC = () => {
       <div className="sidebar-section">
         <div className={clsx('sidebar-section-title', 'd-flex justify-content-between align-items-center', { 'd-none': isCollapsed })}>
           <span>Team spaces</span>
-          <span className="sidebar-add-btn">+</span>
+          {canCreateProjects && (
+            <button
+              className="sidebar-add-btn"
+              onClick={() => setShowCreateModal(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#64748B',
+                fontSize: '20px',
+                cursor: 'pointer',
+                padding: '0',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#F1F5F9';
+                e.currentTarget.style.color = '#334155';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'none';
+                e.currentTarget.style.color = '#64748B';
+              }}
+              title="Create Project"
+            >
+              +
+            </button>
+          )}
         </div>
-        <Link to="/tasks" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/tasks', 'justify-content-center': isCollapsed })}>
-          <MaterialIcon name="task_alt" />
-          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Tasks</span>
-        </Link>
-        {hasPermission('canViewProjectOverview') && (
-          <Link to="/backlog" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/backlog', 'justify-content-center': isCollapsed })}>
-            <MaterialIcon name="inventory" />
-            <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Backlog</span>
-          </Link>
+
+        {/* Projects List */}
+        {!isCollapsed && canViewProjects && (
+          <div style={{ marginBottom: '12px' }}>
+            {projectsLoading ? (
+              <div className="text-center py-2" style={{ fontSize: '12px', color: '#64748B' }}>
+                Loading projects...
+              </div>
+            ) : projects.length > 0 ? (
+              projects.map((project) => {
+                const isActive = location.pathname.startsWith(`/project/${project.id}`);
+                const isExpanded = isProjectExpanded(project.id);
+                return (
+                  <div key={project.id} style={{ marginBottom: '4px' }}>
+                    {/* Project Header - Clickable to expand/collapse */}
+                    <div
+                      className={clsx('sidebar-menu-item', {
+                        'active': isActive,
+                        'd-flex align-items-center gap-2': true
+                      })}
+                      onClick={() => toggleProject(project.id)}
+                      style={{
+                        paddingLeft: '12px',
+                        fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <span 
+                        className="material-icons" 
+                        style={{ 
+                          fontSize: '16px', 
+                          transition: 'transform 0.2s',
+                          transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                        }}
+                      >
+                        chevron_right
+                      </span>
+                      <MaterialIcon name="folder" />
+                      <span className="sidebar-menu-text" style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {project.name}
+                      </span>
+                    </div>
+                    
+                    {/* Project Sub-items - Shown when expanded */}
+                    {isExpanded && (
+                      <div style={{ paddingLeft: '32px', marginTop: '4px' }}>
+                        <Link
+                          to={`/project/${project.id}/tasks`}
+                          className={clsx('sidebar-menu-item', {
+                            'active': location.pathname === `/project/${project.id}/tasks`,
+                            'd-flex align-items-center gap-2': true
+                          })}
+                          style={{
+                            paddingLeft: '12px',
+                            fontSize: '13px',
+                            marginBottom: '2px',
+                            color: location.pathname === `/project/${project.id}/tasks` ? '#0056D2' : '#64748B'
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MaterialIcon name="task_alt" />
+                          <span className="sidebar-menu-text">Tasks</span>
+                        </Link>
+                        {hasPermission('canViewProjectOverview') && (
+                          <Link
+                            to={`/project/${project.id}/backlog`}
+                            className={clsx('sidebar-menu-item', {
+                              'active': location.pathname === `/project/${project.id}/backlog`,
+                              'd-flex align-items-center gap-2': true
+                            })}
+                            style={{
+                              paddingLeft: '12px',
+                              fontSize: '13px',
+                              marginBottom: '2px',
+                              color: location.pathname === `/project/${project.id}/backlog` ? '#0056D2' : '#64748B'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MaterialIcon name="inventory" />
+                            <span className="sidebar-menu-text">Backlog</span>
+                          </Link>
+                        )}
+                        <Link
+                          to={`/project/${project.id}/docs`}
+                          className={clsx('sidebar-menu-item', {
+                            'active': location.pathname === `/project/${project.id}/docs`,
+                            'd-flex align-items-center gap-2': true
+                          })}
+                          style={{
+                            paddingLeft: '12px',
+                            fontSize: '13px',
+                            marginBottom: '2px',
+                            color: location.pathname === `/project/${project.id}/docs` ? '#0056D2' : '#64748B'
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MaterialIcon name="description" />
+                          <span className="sidebar-menu-text">Docs</span>
+                        </Link>
+                        <Link
+                          to={`/project/${project.id}/meeting`}
+                          className={clsx('sidebar-menu-item', {
+                            'active': location.pathname === `/project/${project.id}/meeting`,
+                            'd-flex align-items-center gap-2': true
+                          })}
+                          style={{
+                            paddingLeft: '12px',
+                            fontSize: '13px',
+                            marginBottom: '2px',
+                            color: location.pathname === `/project/${project.id}/meeting` ? '#0056D2' : '#64748B'
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MaterialIcon name="groups" />
+                          <span className="sidebar-menu-text">Meeting</span>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-2" style={{ fontSize: '12px', color: '#94A3B8' }}>
+                No projects yet
+              </div>
+            )}
+          </div>
         )}
-        <Link to="/docs" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/docs', 'justify-content-center': isCollapsed })}>
-          <MaterialIcon name="description" />
-          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Docs</span>
-        </Link>
-        <Link to="/meeting" className={clsx('sidebar-menu-item', { 'active': location.pathname === '/meeting', 'justify-content-center': isCollapsed })}>
-          <MaterialIcon name="groups" />
-          <span className={clsx('sidebar-menu-text', { 'd-none': isCollapsed })}>Meeting</span>
-        </Link>
+
+        {/* Collapsed Projects Icon */}
+        {isCollapsed && canViewProjects && projects.length > 0 && (
+          <div className="position-relative">
+            <div className="sidebar-menu-item justify-content-center" style={{ position: 'relative' }}>
+              <MaterialIcon name="folder" />
+              {projects.length > 0 && (
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style={{ fontSize: '10px', padding: '2px 5px' }}
+                >
+                  {projects.length}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Project Creation Modal */}
+      <ProjectCreationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={handleCreateProject}
+      />
 
       {/* Other Section */}
       <div className="sidebar-section">

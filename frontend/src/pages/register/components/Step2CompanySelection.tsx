@@ -1,6 +1,6 @@
 import React from 'react';
 import type { StepComponentProps } from '../types';
-import type { CompanyDto } from '../../../services/api';
+import type { CompanyDto } from '../../../services/companyService';
 
 interface Step2CompanySelectionProps extends StepComponentProps {
   companySearch: string;

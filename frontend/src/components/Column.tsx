@@ -2,50 +2,25 @@ import React, { useState } from 'react';
 import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
 import TaskCard from './TaskCard';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  dueDate: string;
-  assignees: string[];
-  comments: number;
-  links: number;
-  progress: string;
-  type: string;
-}
-
-interface Column {
-  id: string;
-  title: string;
-  taskIds: string[];
-  statusColor: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  avatar: string;
-}
+import type { UITask, UIColumn, UIUser } from '../types/ui';
 
 interface ColumnProps {
-  column: Column;
-  tasks: Task[];
-  users: { [key: string]: User };
+  column: UIColumn;
+  tasks: UITask[];
+  users: { [key: string]: UIUser };
   onDragStart: (e: React.DragEvent, taskId: string) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, columnId: string) => void;
-  onTaskClick: (task: Task) => void;
+  onTaskClick: (task: UITask) => void;
+  onCreateTask?: () => void;
 }
 
-const Column: React.FC<ColumnProps> = ({ column, tasks, users, onDragStart, onDragOver, onDrop, onTaskClick }) => {
+const Column: React.FC<ColumnProps> = ({ column, tasks, users, onDragStart, onDragOver, onDrop, onTaskClick, onCreateTask }) => {
   const { hasPermission } = useUser();
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   return (
-    <div className="column-container bg-white rounded p-3 shadow-sm border">
+    <div className="column-container bg-white rounded shadow-sm border" style={{ minWidth: '270px', maxWidth: '270px', flexShrink: 0, padding: '12px' }}>
       <div className="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
         <div className="d-flex align-items-center gap-2">
           <div 
@@ -63,14 +38,14 @@ const Column: React.FC<ColumnProps> = ({ column, tasks, users, onDragStart, onDr
           </div>
         </div>
         <div className="d-flex gap-2">
-          {hasPermission('canCreateTasks') && (
-            <button className="btn btn-primary btn-sm p-1 rounded" style={{ width: '28px', height: '28px' }}>
+          {hasPermission('canCreateTasks') && onCreateTask && (
+            <button 
+              className="btn btn-primary btn-sm p-1 rounded" 
+              style={{ width: '28px', height: '28px' }}
+              onClick={onCreateTask}
+              title="Create Task"
+            >
               +
-            </button>
-          )}
-          {hasPermission('canEditTasks') && (
-            <button className="btn btn-outline-secondary btn-sm p-1 rounded" style={{ width: '28px', height: '28px' }}>
-              ⋯
             </button>
           )}
         </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { StepComponentProps } from '../types';
-import type { RoleDto } from '../../../services/api';
+import type { RoleDto } from '../../../services/roleService';
 
 interface Step5TermsConfirmationProps extends StepComponentProps {
   roles: RoleDto[];

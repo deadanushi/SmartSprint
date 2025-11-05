@@ -11,13 +11,13 @@ Frontend
 
 Backend
 1. cd backend
-2. python -m venv venv && ./venv/Scripts/activate (Windows)
+2. python -m venv venv ; ./venv/Scripts/activate
 3. pip install -r requirements.txt
 4. copy .env.example to .env and fill MySQL settings
 5. python main.py (http://localhost:8000, Swagger at /docs)
 
 Database (MySQL 8.0)
-1. CREATE DATABASE taskflow CHARACTER SET utf8mb4;
+1. CREATE DATABASE smartSprint;
 2. Run backend/db/schema_mysql.sql
 3. Run backend/db/permissions_seed.sql (adds all permissions + admin user)
 

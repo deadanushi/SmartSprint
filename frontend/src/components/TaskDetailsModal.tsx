@@ -1,37 +1,57 @@
-import React from 'react';
-import clsx from 'clsx';
+import React, { useState } from 'react';
 import { useUser } from '../contexts/UserContext';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  dueDate: string;
-  assignees: string[];
-  comments: number;
-  links: number;
-  progress: string;
-  type: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  avatar: string;
-}
+import { useTaskOperations } from '../hooks/useTaskOperations';
+import type { TaskDto } from '../services/taskService';
+import type { UITask, UIUser } from '../types/ui';
+import AlertModal from './AlertModal';
 
 interface TaskDetailsModalProps {
-  task: Task | null;
-  users: { [key: string]: User };
+  task: UITask | null;
+  users: { [key: string]: UIUser };
   isOpen: boolean;
   onClose: () => void;
+  onTaskDeleted?: () => void;
+  onTaskEdit?: (task: UITask) => void;
 }
 
-const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, users, isOpen, onClose }) => {
+const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ 
+  task, 
+  users, 
+  isOpen, 
+  onClose, 
+  onTaskDeleted,
+  onTaskEdit 
+}) => {
   const { hasPermission } = useUser();
+  const { deleteTask: deleteTaskOp, loading: deleting } = useTaskOperations();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
   if (!isOpen || !task) return null;
+
+  const handleDelete = async () => {
+    if (!task.backendData) return;
+    
+    try {
+      await deleteTaskOp(task.backendData.id);
+      setShowDeleteConfirm(false);
+      onClose();
+      if (onTaskDeleted) {
+        onTaskDeleted();
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      // Error is already handled by the hook
+    }
+  };
+
+  const handleEdit = () => {
+    if (onTaskEdit) {
+      onTaskEdit(task);
+    }
+  };
+
+  const canDelete = hasPermission('canDeleteTasks');
+  const canEdit = hasPermission('canEditTasks');
 
   const getPriorityColor = (priority: string): string => {
     switch (priority) {
@@ -73,7 +93,7 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, users, isOpen
     }
   };
 
-  const getAssignees = (): User[] => {
+  const getAssignees = (): UIUser[] => {
     return task.assignees.map(userId => users[userId]).filter(Boolean);
   };
 
@@ -114,21 +134,61 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, users, isOpen
         </button>
 
         <div className="p-4 border-bottom">
-          <div 
-            className="d-inline-block rounded-pill px-3 py-2 small fw-semibold text-uppercase mb-3"
-            style={{
-              color: getStatusColor(task.status),
-              backgroundColor: getStatusBgColor(task.status),
-            }}
-          >
-            {task.status}
+          <div className="d-flex justify-content-between align-items-start mb-3">
+            <div className="flex-grow-1">
+              <div 
+                className="d-inline-block rounded-pill px-3 py-2 small fw-semibold text-uppercase mb-3"
+                style={{
+                  color: getStatusColor(task.status),
+                  backgroundColor: getStatusBgColor(task.status),
+                }}
+              >
+                {task.status}
+              </div>
+              <h1 className="display-6 fw-bold text-dark mb-3">{task.title}</h1>
+            </div>
+            <div className="d-flex gap-2 ms-3">
+              {canEdit && (
+                <button
+                  className="btn btn-outline-primary btn-sm d-flex align-items-center gap-1"
+                  onClick={handleEdit}
+                  style={{ height: '36px', fontSize: '13px' }}
+                >
+                  <span className="material-icons" style={{ fontSize: '18px' }}>edit</span>
+                  Edit
+                </button>
+              )}
+              {canDelete && (
+                <button
+                  className="btn btn-outline-danger btn-sm d-flex align-items-center gap-1"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{ height: '36px', fontSize: '13px' }}
+                >
+                  <span className="material-icons" style={{ fontSize: '18px' }}>delete</span>
+                  Delete
+                </button>
+              )}
+            </div>
           </div>
-          <h1 className="display-6 fw-bold text-dark mb-3 pe-5">{task.title}</h1>
-          <p className="fs-6 text-secondary mb-0 fst-italic">{task.description}</p>
         </div>
 
         <div className="d-flex gap-4 p-4">
           <div className="flex-grow-1">
+            <div className="mb-4">
+              <h3 className="small fw-semibold text-dark text-uppercase mb-3">Description</h3>
+              <div className="bg-light rounded-3 p-3 border">
+                {task.description ? (
+                  <p className="text-body mb-0" style={{ fontSize: '14px', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                    {task.description}
+                  </p>
+                ) : (
+                  <p className="text-secondary mb-0 fst-italic" style={{ fontSize: '14px' }}>
+                    No description provided
+                  </p>
+                )}
+              </div>
+            </div>
+
             <div className="mb-4">
               <h3 className="small fw-semibold text-dark text-uppercase mb-3">Comments</h3>
               <div className="task-modal-comments-section bg-light rounded-3 p-3 border">
@@ -231,6 +291,16 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({ task, users, isOpen
           </div>
         </div>
       </div>
+
+      <AlertModal
+        open={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Delete Task"
+        message="Are you sure you want to delete this task? This action cannot be undone."
+        variant="error"
+        confirmText={deleting ? "Deleting..." : "Delete"}
+      />
     </div>
   );
 };

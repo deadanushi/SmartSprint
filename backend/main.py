@@ -1,6 +1,6 @@
 """
-TaskFlow Backend - FastAPI Application
-Main entry point for the TaskFlow backend API server.
+SmartSprint Backend - FastAPI Application
+Main entry point for the SmartSprint backend API server.
 """
 
 from fastapi import FastAPI
@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="TaskFlow API",
-    description="TaskFlow Advanced Project Management System - Backend API",
+    title="SmartSprint API",
+    description="SmartSprint Advanced Project Management System - Backend API",
     version="1.0.0"
 )
 
@@ -73,6 +73,9 @@ from routes.companies import router as companies_router
 from routes.permissions import router as permissions_router
 from routes.role_permissions import router as role_permissions_router
 from routes.user_permissions import router as user_permissions_router
+from routes.tasks import router as tasks_router
+from routes.projects import router as projects_router
+from routes.documents import router as documents_router
 
 app.include_router(users_router)
 app.include_router(roles_router)
@@ -80,13 +83,16 @@ app.include_router(companies_router)
 app.include_router(permissions_router)
 app.include_router(role_permissions_router)
 app.include_router(user_permissions_router)
+app.include_router(tasks_router)
+app.include_router(projects_router)
+app.include_router(documents_router)
 
 
 @app.get("/")
 async def root():
     """Root endpoint - API health check"""
     return JSONResponse({
-        "message": "TaskFlow API is running",
+        "message": "SmartSprint API is running",
         "status": "healthy",
         "version": "1.0.0"
     })
@@ -97,7 +103,7 @@ async def health_check():
     """Health check endpoint"""
     return JSONResponse({
         "status": "healthy",
-        "service": "TaskFlow API"
+        "service": "SmartSprint API"
     })
 
 

@@ -1,17 +1,34 @@
-# Create Company - TODO
+AI & Document Processing
+ai doc upload - Complete AI document upload system with text extraction and task generation pipeline
+text extraction backend - Implement PDF/Word text extraction backend service
 
-- Frontend: implement create-company flow on Register step 3
-  - Persist new company selection state
-  - Build service method to call API (companies.create)
-  - Handle success (set selected company from API response) and errors (inline)
-  - Loading/disabled states on submission button
+Core Features
+company - Complete company management cone 
+comments - Build comment system 
+visibility cone*
 
-- Backend: implement companies API (to be wired later)
-  - POST /api/companies → create company { name, industry }
-  - Validate unique name (case-insensitive) and required fields
-  - Return created company payload { id, name, industry }
+UI Components
+app header - Enhance header with user menu, notifications, search, settings, logout
+board - Enhance kanban board 
 
-- Integration
-  - Replace static create option with actual API call
-  - Add errors (e.g., name already exists)
+Document Management
+document download
 
+Pages & Features
+meeting page - Build meeting scheduling and management page
+dashboard page - Create main dashboard with project overview, stats, recent activity
+inbox page - Build inbox for notifications and messages
+settings page - Create user/account settings page
+support page - Build support/help page
+
+Authentication & Security
+upload authentication - Add proper auth context to document uploads (currently uploaded_by is null)
+hashed password
+
+Review & Analysis
+jira review - Review and compare with Jira features for feature parity
+trello review.
+
+AI Pipeline implemntation and keys
+
+Chats

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
-import { useSidebar } from '../contexts/SidebarContext';
 import { 
   CalendarEvent, 
   Sprint, 
@@ -12,11 +11,10 @@ import {
   getEventTypeIcon,
   getSprintStatusColor,
   getSprintStatusBgColor
-} from '../types/calendar';
+} from '../services/calendarService';
 
 const CalendarPage: React.FC = () => {
   const { hasPermission } = useUser();
-  const { isCollapsed } = useSidebar();
   const [currentView, setCurrentView] = useState<CalendarView['type']>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -32,17 +30,17 @@ const CalendarPage: React.FC = () => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
-  const getEventsForDate = (date: Date) => {
+  const getEventsForDate = (date: Date): CalendarEvent[] => {
     const dateStr = date.toISOString().split('T')[0];
-    return mockCalendarEvents.filter(event => {
+    return mockCalendarEvents.filter((event: CalendarEvent) => {
       const eventDate = new Date(event.startDate).toISOString().split('T')[0];
       return eventDate === dateStr;
     });
   };
 
-  const getSprintsForDate = (date: Date) => {
+  const getSprintsForDate = (date: Date): Sprint[] => {
     const dateStr = date.toISOString().split('T')[0];
-    return mockSprints.filter(sprint => {
+    return mockSprints.filter((sprint: Sprint) => {
       const startDate = new Date(sprint.startDate).toISOString().split('T')[0];
       const endDate = new Date(sprint.endDate).toISOString().split('T')[0];
       return dateStr >= startDate && dateStr <= endDate;
@@ -77,7 +75,7 @@ const CalendarPage: React.FC = () => {
           className={clsx('calendar-day-cell', { 'calendar-day-today': isToday })}
         >
           <div className="calendar-day-number">{day}</div>
-          {events.slice(0, 3).map(event => (
+          {events.slice(0, 3).map((event: CalendarEvent) => (
             <div
               key={event.id}
               className="calendar-event-item text-white cursor-pointer"
@@ -154,7 +152,7 @@ const CalendarPage: React.FC = () => {
   };
 
   return (
-    <div className="page-container" style={{ marginLeft: isCollapsed ? '80px' : '280px', transition: 'margin-left 0.3s ease' }}>
+      <div className="page-container">
       <div className="breadcrumb bg-white px-3 py-2 border-bottom d-flex align-items-center gap-2 small text-secondary">
         <span className="cursor-pointer">←</span>
         <span className="text-primary text-decoration-none cursor-pointer">Team spaces</span>
@@ -215,7 +213,7 @@ const CalendarPage: React.FC = () => {
 
         <div className="mb-4">
           <h2 className="h5 fw-semibold text-dark mb-3">Active Sprints</h2>
-          {mockSprints.filter(sprint => sprint.status === 'active').map(sprint => (
+          {mockSprints.filter((sprint: Sprint) => sprint.status === 'active').map((sprint: Sprint) => (
             <div key={sprint.id} className="calendar-sprint-card bg-white rounded-3 p-4 shadow-sm border mb-3">
               <div className="d-flex justify-content-between align-items-start mb-3">
                 <div>
@@ -258,10 +256,10 @@ const CalendarPage: React.FC = () => {
         <div>
           <h2 className="h5 fw-semibold text-dark mb-3">Upcoming Events</h2>
           {mockCalendarEvents
-            .filter(event => new Date(event.startDate) >= new Date())
-            .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+            .filter((event: CalendarEvent) => new Date(event.startDate) >= new Date())
+            .sort((a: CalendarEvent, b: CalendarEvent) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
             .slice(0, 5)
-            .map(event => (
+            .map((event: CalendarEvent) => (
               <div key={event.id} className="calendar-sprint-card bg-white rounded-3 p-4 shadow-sm border mb-3">
                 <div className="d-flex justify-content-between align-items-start mb-3">
                   <div>

@@ -8,6 +8,14 @@ from .user import User
 from .permission import Permission
 from .role_has_permission import RoleHasPermission
 from .user_permission import UserPermission
+from .project import Project, ProjectStatus, Sprint, SprintStatus
+from .task import Task, TaskStatus, TaskPriority, TaskType, TaskAssignee, TaskLink, Comment
+from .document import Document
 
-__all__ = ['Base', 'Role', 'Company', 'User', 'Permission', 'RoleHasPermission', 'UserPermission']
+__all__ = [
+    'Base', 'Role', 'Company', 'User', 'Permission', 'RoleHasPermission', 'UserPermission',
+    'Project', 'ProjectStatus', 'Sprint', 'SprintStatus',
+    'Task', 'TaskStatus', 'TaskPriority', 'TaskType', 'TaskAssignee', 'TaskLink', 'Comment',
+    'Document'
+]
 

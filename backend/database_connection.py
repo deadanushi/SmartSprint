@@ -85,6 +85,16 @@ def get_db() -> Session:
         def get_users(db: Session = Depends(get_db)):
             return db.query(User).all()
     """
+    # Ensure session factory is bound to an engine
+    try:
+        # type: ignore[attr-defined] - SessionLocal may not expose 'kw' in some typings
+        is_bound = getattr(SessionLocal, "kw", {}).get("bind") is not None  # pyright: ignore[reportOptionalMemberAccess]
+    except Exception:
+        is_bound = False
+
+    if not is_bound:
+        init_db()
+
     db = SessionLocal()
     try:
         yield db
@@ -97,6 +107,16 @@ def get_db_dependency():
     """
     FastAPI dependency for database sessions
     """
+    # Ensure session factory is bound to an engine
+    try:
+        # type: ignore[attr-defined] - SessionLocal may not expose 'kw' in some typings
+        is_bound = getattr(SessionLocal, "kw", {}).get("bind") is not None  # pyright: ignore[reportOptionalMemberAccess]
+    except Exception:
+        is_bound = False
+
+    if not is_bound:
+        init_db()
+
     db = SessionLocal()
     try:
         yield db
