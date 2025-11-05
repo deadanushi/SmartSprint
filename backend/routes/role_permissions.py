@@ -7,7 +7,7 @@ from typing import List
 
 from database_connection import get_db_dependency
 from models import Role, Permission, RoleHasPermission
-from schemas import RolePermissionsResponse, RolePermissionsUpdate, PermissionResponse
+from schemas.permission import RolePermissionsResponse, RolePermissionsUpdate, PermissionResponse
 
 router = APIRouter(prefix="/api/roles", tags=["role-permissions"])
 

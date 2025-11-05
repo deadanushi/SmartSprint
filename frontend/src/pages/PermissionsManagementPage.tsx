@@ -1,77 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
-import { useSidebar } from '../contexts/SidebarContext';
 import AlertModal from '../components/AlertModal';
-import {
-  getRoles,
-  getRolePermissions,
-  updateRolePermissions,
-  getPermissions,
-  type RoleDto,
-  type PermissionDto,
-  type RolePermissionsDto,
-} from '../services/api';
+import { usePermissionsManagement } from '../hooks/usePermissionsManagement';
+import type { RoleDto } from '../services/roleService';
 
 const PermissionsManagementPage: React.FC = () => {
-  const { currentUser, hasPermission } = useUser();
-  const { isCollapsed } = useSidebar();
-  const [roles, setRoles] = useState<RoleDto[]>([]);
-  const [allPermissions, setAllPermissions] = useState<PermissionDto[]>([]);
-  const [selectedRole, setSelectedRole] = useState<RoleDto | null>(null);
-  const [rolePermissions, setRolePermissions] = useState<RolePermissionsDto | null>(null);
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<Set<number>>(new Set());
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { hasPermission } = useUser();
   const [successModalOpen, setSuccessModalOpen] = useState(false);
+
+  // Use custom hook to aggregate permissions management data
+  const {
+    roles,
+    allPermissions,
+    selectedRole,
+    rolePermissions,
+    selectedPermissionIds,
+    isLoading,
+    isSaving,
+    error,
+    setSelectedPermissionIds,
+    loadRolePermissions,
+    saveRolePermissions,
+    refetchRoles,
+    refetchPermissions,
+    clearError,
+  } = usePermissionsManagement();
 
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const [rolesData, permissionsData] = await Promise.all([
-          getRoles(),
-          getPermissions(),
-        ]);
-        
-        setRoles(rolesData);
-        setAllPermissions(permissionsData);
-        
-        // Auto-select first role if available
-        if (rolesData.length > 0) {
-          handleRoleSelect(rolesData[0]);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load data');
-        console.error('Error loading data:', err);
-      } finally {
-        setIsLoading(false);
+      await Promise.all([refetchRoles(), refetchPermissions()]);
+      
+      // Auto-select first role if available
+      if (roles.length > 0) {
+        await loadRolePermissions(roles[0]);
       }
     };
     
     loadData();
-  }, []);
+  }, []); // Only run once on mount
 
-  // Load role permissions when role is selected
-  const handleRoleSelect = async (role: RoleDto) => {
-    try {
-      setSelectedRole(role);
-      setError(null);
-      
-      const permissionsData = await getRolePermissions(role.id);
-      setRolePermissions(permissionsData);
-      
-      // Set selected permission IDs
-      const selectedIds = new Set(permissionsData.permissions.map(p => p.id));
-      setSelectedPermissionIds(selectedIds);
-    } catch (err) {
-      console.error('Error loading role permissions:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load role permissions');
+  // Auto-select first role when roles are loaded
+  useEffect(() => {
+    if (roles.length > 0 && !selectedRole) {
+      loadRolePermissions(roles[0]);
     }
+  }, [roles.length, selectedRole, loadRolePermissions]);
+
+  const handleRoleSelect = async (role: RoleDto) => {
+    await loadRolePermissions(role);
   };
 
   const handlePermissionToggle = (permissionId: number) => {
@@ -85,35 +63,19 @@ const PermissionsManagementPage: React.FC = () => {
   };
 
   const handleSavePermissions = async () => {
-    if (!selectedRole) return;
-    
     try {
-      setIsSaving(true);
-      setError(null);
-      
-      const permissionIds = Array.from(selectedPermissionIds);
-      
-      await updateRolePermissions(selectedRole.id, {
-        permission_ids: permissionIds,
-      });
-      
-      // Reload role permissions to get updated state
-      const permissionsData = await getRolePermissions(selectedRole.id);
-      setRolePermissions(permissionsData);
-      
+      await saveRolePermissions();
       // Show success modal
       setSuccessModalOpen(true);
     } catch (err) {
+      // Error is already handled by the hook
       console.error('Error saving permissions:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save permissions');
-    } finally {
-      setIsSaving(false);
     }
   };
 
   // Get permission categories from allPermissions
   const permissionCategories = React.useMemo(() => {
-    const categoryMap = new Map<string, PermissionDto[]>();
+    const categoryMap = new Map<string, typeof allPermissions[number][]>();
     
     allPermissions.forEach(perm => {
       if (!categoryMap.has(perm.category)) {
@@ -128,11 +90,9 @@ const PermissionsManagementPage: React.FC = () => {
     }));
   }, [allPermissions]);
 
-  const sidebarWidth = isCollapsed ? '80px' : '280px';
-
   if (!hasPermission('canManagePermissions')) {
     return (
-      <div className="page-container" style={{ marginLeft: sidebarWidth, padding: '40px', transition: 'margin-left 0.3s ease' }}>
+      <div className="page-container" style={{ padding: '40px' }}>
         <div className="bg-white rounded-lg p-5" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
           <div className="d-flex align-items-center gap-3 mb-3">
             <span className="material-icons" style={{ fontSize: '24px', color: '#DC2626' }}>block</span>
@@ -148,7 +108,7 @@ const PermissionsManagementPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="page-container" style={{ marginLeft: sidebarWidth, padding: '40px', transition: 'margin-left 0.3s ease' }}>
+      <div className="page-container" style={{ padding: '40px' }}>
         <div className="bg-white rounded-lg p-5 text-center" style={{ boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
           <div className="spinner-border mb-3" style={{ color: '#0056D2', width: '40px', height: '40px' }} role="status">
             <span className="visually-hidden">Loading...</span>
@@ -160,7 +120,7 @@ const PermissionsManagementPage: React.FC = () => {
   }
 
   return (
-    <div className="page-container" style={{ marginLeft: sidebarWidth, padding: '40px', background: '#F9FAFB', transition: 'margin-left 0.3s ease' }}>
+    <div className="page-container" style={{ padding: '40px', background: '#F9FAFB' }}>
       {/* Header */}
       <div className="mb-5">
         <div className="d-flex align-items-center gap-3 mb-2">
@@ -181,7 +141,7 @@ const PermissionsManagementPage: React.FC = () => {
           <button
             type="button"
             className="btn-close"
-            onClick={() => setError(null)}
+            onClick={clearError}
             aria-label="Close"
             style={{ fontSize: '12px' }}
           ></button>

@@ -4,7 +4,7 @@ from typing import List
 
 from database_connection import get_db_dependency
 from models import Role
-from schemas import RoleResponse, RoleUpdate
+from schemas.role import RoleResponse, RoleUpdate
 
 router = APIRouter(prefix="/api/roles", tags=["roles"])
 

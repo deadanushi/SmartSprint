@@ -1,6 +1,6 @@
 import React from 'react';
 import type { StepComponentProps } from '../types';
-import type { RoleDto } from '../../../services/api';
+import type { RoleDto } from '../../../services/roleService';
 
 interface Step3RoleSelectionProps extends StepComponentProps {
   roles: RoleDto[];

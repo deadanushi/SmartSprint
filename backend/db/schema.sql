@@ -1,94 +1,110 @@
--- TaskFlow MySQL 8.0 Schema
+-- =========================================================
+-- SmartSprint MySQL 8.0 Complete Database Schema
 -- Safe to run multiple times: uses IF NOT EXISTS where possible
--- Charset: utf8mb4 for full Unicode
+-- Charset: utf8mb4 for full Unicode support
+-- =========================================================
 
--- Recommended: create and use database (uncomment if needed)
--- CREATE DATABASE IF NOT EXISTS taskflow CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- USE taskflow;
+-- Create database (uncomment if needed)
+-- CREATE DATABASE IF NOT EXISTS smarsprint CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE smarsprint;
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- =========================================================
--- Lookup tables (enum-like)
+-- SECTION 1: LOOKUP TABLES (Enum-like reference tables)
 -- =========================================================
 
+-- Roles lookup table
 CREATE TABLE IF NOT EXISTS roles (
   id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   role_key      VARCHAR(50) NOT NULL UNIQUE,
-  name          VARCHAR(100) NOT NULL
+  name          VARCHAR(100) NOT NULL,
+  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Project status lookup table
 CREATE TABLE IF NOT EXISTS project_status (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(30) NOT NULL UNIQUE,
+  `key`  VARCHAR(30) NOT NULL UNIQUE,
   name VARCHAR(60) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Sprint status lookup table
 CREATE TABLE IF NOT EXISTS sprint_status (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(30) NOT NULL UNIQUE,
+  `key`  VARCHAR(30) NOT NULL UNIQUE,
   name VARCHAR(60) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Task status lookup table
 CREATE TABLE IF NOT EXISTS task_status (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(30) NOT NULL UNIQUE,
+  `key`  VARCHAR(30) NOT NULL UNIQUE,
   name VARCHAR(60) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Task priority lookup table
 CREATE TABLE IF NOT EXISTS task_priority (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(20) NOT NULL UNIQUE,
+  `key`  VARCHAR(20) NOT NULL UNIQUE,
   name VARCHAR(40) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Task type lookup table
 CREATE TABLE IF NOT EXISTS task_type (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(30) NOT NULL UNIQUE,
+  `key`  VARCHAR(30) NOT NULL UNIQUE,
   name VARCHAR(60) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Dependency type lookup table
 CREATE TABLE IF NOT EXISTS dependency_type (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(30) NOT NULL UNIQUE,
+  `key`  VARCHAR(30) NOT NULL UNIQUE,
   name VARCHAR(60) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Event type lookup table
 CREATE TABLE IF NOT EXISTS event_type (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(30) NOT NULL UNIQUE,
+  `key`  VARCHAR(30) NOT NULL UNIQUE,
   name VARCHAR(60) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Event priority lookup table
 CREATE TABLE IF NOT EXISTS event_priority (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(20) NOT NULL UNIQUE,
+  `key`  VARCHAR(20) NOT NULL UNIQUE,
   name VARCHAR(40) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Event status lookup table
 CREATE TABLE IF NOT EXISTS event_status (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(30) NOT NULL UNIQUE,
+  `key`  VARCHAR(30) NOT NULL UNIQUE,
   name VARCHAR(60) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Processing type lookup table (for AI/document processing)
 CREATE TABLE IF NOT EXISTS processing_type (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(40) NOT NULL UNIQUE,
+  `key`  VARCHAR(40) NOT NULL UNIQUE,
   name VARCHAR(80) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Processing status lookup table
 CREATE TABLE IF NOT EXISTS processing_status (
   id   TINYINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  key  VARCHAR(30) NOT NULL UNIQUE,
+  `key`  VARCHAR(30) NOT NULL UNIQUE,
   name VARCHAR(60) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =========================================================
--- Core tables
+-- SECTION 2: CORE ENTITY TABLES
 -- =========================================================
 
+-- Companies table
 CREATE TABLE IF NOT EXISTS companies (
   id               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name             VARCHAR(255) NOT NULL,
@@ -103,6 +119,7 @@ CREATE TABLE IF NOT EXISTS companies (
   KEY idx_companies_domain (domain)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Users table
 CREATE TABLE IF NOT EXISTS users (
   id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   email           VARCHAR(255) NOT NULL UNIQUE,
@@ -125,6 +142,26 @@ CREATE TABLE IF NOT EXISTS users (
   KEY idx_users_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Permissions table
+CREATE TABLE IF NOT EXISTS permissions (
+  id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  perm_key     VARCHAR(100) NOT NULL UNIQUE,
+  name         VARCHAR(140) NOT NULL,
+  category     VARCHAR(60) NOT NULL,
+  created_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Role-Permission mapping table
+CREATE TABLE IF NOT EXISTS role_has_permission (
+  id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  role_id         BIGINT UNSIGNED NOT NULL,
+  permission_id   BIGINT UNSIGNED NOT NULL,
+  UNIQUE KEY uq_role_permission (role_id, permission_id),
+  CONSTRAINT fk_rhp_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+  CONSTRAINT fk_rhp_permission FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- User-Permission mapping table (explicit user permissions)
 CREATE TABLE IF NOT EXISTS user_permissions (
   id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id         BIGINT UNSIGNED NOT NULL,
@@ -138,6 +175,7 @@ CREATE TABLE IF NOT EXISTS user_permissions (
   KEY idx_user_permissions_key (permission_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Projects table
 CREATE TABLE IF NOT EXISTS projects (
   id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name                VARCHAR(255) NOT NULL,
@@ -158,6 +196,7 @@ CREATE TABLE IF NOT EXISTS projects (
   KEY idx_projects_status_id (status_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- User-Project mapping table (project members)
 CREATE TABLE IF NOT EXISTS user_projects (
   id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id    BIGINT UNSIGNED NOT NULL,
@@ -171,6 +210,7 @@ CREATE TABLE IF NOT EXISTS user_projects (
   KEY idx_user_projects_project_id (project_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Sprints table
 CREATE TABLE IF NOT EXISTS sprints (
   id               BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name             VARCHAR(255) NOT NULL,
@@ -193,6 +233,11 @@ CREATE TABLE IF NOT EXISTS sprints (
   KEY idx_sprints_dates (start_date, end_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- =========================================================
+-- SECTION 3: TASK MANAGEMENT TABLES
+-- =========================================================
+
+-- Tasks table
 CREATE TABLE IF NOT EXISTS tasks (
   id                   BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   title                VARCHAR(500) NOT NULL,
@@ -228,6 +273,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   KEY idx_tasks_due_date (due_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Task dependencies table
 CREATE TABLE IF NOT EXISTS task_dependencies (
   id                   BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   task_id              BIGINT UNSIGNED NOT NULL,
@@ -241,6 +287,7 @@ CREATE TABLE IF NOT EXISTS task_dependencies (
   KEY idx_task_dependencies_depends_on (depends_on_task_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Task attachments table
 CREATE TABLE IF NOT EXISTS task_attachments (
   id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   task_id       BIGINT UNSIGNED NOT NULL,
@@ -255,6 +302,39 @@ CREATE TABLE IF NOT EXISTS task_attachments (
   KEY idx_task_attachments_task_id (task_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Task assignees table (many-to-many relationship)
+CREATE TABLE IF NOT EXISTS task_assignees (
+  id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  task_id    BIGINT UNSIGNED NOT NULL,
+  user_id    BIGINT UNSIGNED NOT NULL,
+  assigned_by BIGINT UNSIGNED,
+  assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT uq_task_assignee UNIQUE (task_id, user_id),
+  CONSTRAINT fk_task_assignees_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+  CONSTRAINT fk_task_assignees_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_task_assignees_assigned_by FOREIGN KEY (assigned_by) REFERENCES users(id),
+  KEY idx_task_assignees_task_id (task_id),
+  KEY idx_task_assignees_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Task links table
+CREATE TABLE IF NOT EXISTS task_links (
+  id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  task_id       BIGINT UNSIGNED NOT NULL,
+  url           VARCHAR(500) NOT NULL,
+  title         VARCHAR(255),
+  description   TEXT,
+  link_type     VARCHAR(50) DEFAULT 'external',
+  created_by    BIGINT UNSIGNED,
+  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_task_links_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+  CONSTRAINT fk_task_links_created_by FOREIGN KEY (created_by) REFERENCES users(id),
+  KEY idx_task_links_task_id (task_id),
+  KEY idx_task_links_created_by (created_by)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Comments table (supports nested comments via parent_comment_id)
 CREATE TABLE IF NOT EXISTS comments (
   id                 BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   content            TEXT NOT NULL,
@@ -274,6 +354,147 @@ CREATE TABLE IF NOT EXISTS comments (
   KEY idx_comments_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- =========================================================
+-- SECTION 4: DOCUMENT MANAGEMENT TABLES
+-- =========================================================
+
+-- Documents table
+CREATE TABLE IF NOT EXISTS documents (
+  id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  title         VARCHAR(255) NOT NULL,
+  description   TEXT,
+  file_name     VARCHAR(255) NOT NULL,
+  file_path     VARCHAR(500) NOT NULL,
+  file_size     BIGINT NOT NULL,
+  mime_type     VARCHAR(100),
+  project_id    BIGINT UNSIGNED,
+  uploaded_by   BIGINT UNSIGNED,
+  is_processed  TINYINT(1) DEFAULT 0,
+  extracted_text LONGTEXT,
+  text_extracted_at DATETIME,
+  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_documents_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+  CONSTRAINT fk_documents_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id),
+  KEY idx_documents_project_id (project_id),
+  KEY idx_documents_uploaded_by (uploaded_by),
+  KEY idx_documents_processed (is_processed),
+  KEY idx_documents_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Document versions table
+CREATE TABLE IF NOT EXISTS document_versions (
+  id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  document_id       BIGINT UNSIGNED NOT NULL,
+  version_number    INT NOT NULL,
+  file_path         VARCHAR(500) NOT NULL,
+  file_size         BIGINT NOT NULL,
+  change_description TEXT,
+  uploaded_by       BIGINT UNSIGNED,
+  uploaded_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT uq_document_version UNIQUE (document_id, version_number),
+  CONSTRAINT fk_document_versions_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  CONSTRAINT fk_document_versions_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id),
+  KEY idx_document_versions_document_id (document_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Document text extraction table
+CREATE TABLE IF NOT EXISTS document_text_extraction (
+  id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  document_id       BIGINT UNSIGNED NOT NULL,
+  extraction_method VARCHAR(50),
+  raw_text          LONGTEXT,
+  structured_data   JSON,
+  page_count        INT,
+  word_count        INT,
+  character_count   INT,
+  extraction_metadata JSON,
+  error_message     TEXT,
+  extracted_at      DATETIME NOT NULL,
+  created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_text_extraction_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  KEY idx_text_extraction_document_id (document_id),
+  KEY idx_text_extraction_extracted_at (extracted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- AI processing table
+CREATE TABLE IF NOT EXISTS ai_processing (
+  id                       BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  document_id              BIGINT UNSIGNED NOT NULL,
+  processing_type_id       TINYINT UNSIGNED NOT NULL,
+  status_id                TINYINT UNSIGNED DEFAULT NULL,
+  input_data               JSON,
+  output_data              JSON,
+  extracted_tasks          JSON,
+  summary                  TEXT,
+  confidence_score         DECIMAL(3,2),
+  processing_started_at    DATETIME,
+  processing_completed_at  DATETIME,
+  error_message            TEXT,
+  created_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ai_processing_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ai_processing_type FOREIGN KEY (processing_type_id) REFERENCES processing_type(id),
+  CONSTRAINT fk_ai_processing_status FOREIGN KEY (status_id) REFERENCES processing_status(id),
+  KEY idx_ai_processing_document_id (document_id),
+  KEY idx_ai_processing_status_id (status_id),
+  KEY idx_ai_processing_type_id (processing_type_id),
+  KEY idx_ai_processing_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- AI generated tasks table
+CREATE TABLE IF NOT EXISTS ai_generated_tasks (
+  id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  ai_processing_id          BIGINT UNSIGNED NOT NULL,
+  suggested_title           VARCHAR(500) NOT NULL,
+  suggested_description     TEXT,
+  suggested_priority_id     TINYINT UNSIGNED,
+  suggested_task_type_id    TINYINT UNSIGNED,
+  suggested_assignee_id     BIGINT UNSIGNED,
+  suggested_due_date        DATETIME,
+  confidence_score          DECIMAL(3,2),
+  is_accepted               TINYINT(1) DEFAULT 0,
+  accepted_by                BIGINT UNSIGNED,
+  accepted_at               DATETIME,
+  created_task_id           BIGINT UNSIGNED,
+  created_at                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ai_gen_tasks_processing FOREIGN KEY (ai_processing_id) REFERENCES ai_processing(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ai_gen_tasks_priority FOREIGN KEY (suggested_priority_id) REFERENCES task_priority(id),
+  CONSTRAINT fk_ai_gen_tasks_type FOREIGN KEY (suggested_task_type_id) REFERENCES task_type(id),
+  CONSTRAINT fk_ai_gen_tasks_assignee FOREIGN KEY (suggested_assignee_id) REFERENCES users(id),
+  CONSTRAINT fk_ai_gen_tasks_accepted_by FOREIGN KEY (accepted_by) REFERENCES users(id),
+  CONSTRAINT fk_ai_gen_tasks_created_task FOREIGN KEY (created_task_id) REFERENCES tasks(id),
+  KEY idx_ai_generated_tasks_processing_id (ai_processing_id),
+  KEY idx_ai_generated_tasks_accepted (is_accepted),
+  KEY idx_ai_generated_tasks_created_task_id (created_task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Document processing queue table
+CREATE TABLE IF NOT EXISTS document_processing_queue (
+  id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  document_id       BIGINT UNSIGNED NOT NULL,
+  processing_stage  VARCHAR(50) NOT NULL,
+  priority          INT DEFAULT 5,
+  status            VARCHAR(20) DEFAULT 'pending',
+  attempts          INT DEFAULT 0,
+  max_attempts       INT DEFAULT 3,
+  error_message     TEXT,
+  scheduled_at      DATETIME,
+  started_at        DATETIME,
+  completed_at      DATETIME,
+  created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  CONSTRAINT fk_processing_queue_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
+  KEY idx_processing_queue_document_id (document_id),
+  KEY idx_processing_queue_status (status),
+  KEY idx_processing_queue_scheduled_at (scheduled_at),
+  KEY idx_processing_queue_priority (priority)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =========================================================
+-- SECTION 5: CALENDAR & EVENTS TABLES
+-- =========================================================
+
+-- Calendar events table
 CREATE TABLE IF NOT EXISTS calendar_events (
   id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   title         VARCHAR(255) NOT NULL,
@@ -304,88 +525,11 @@ CREATE TABLE IF NOT EXISTS calendar_events (
   KEY idx_events_type_id (event_type_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS documents (
-  id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  title         VARCHAR(255) NOT NULL,
-  description   TEXT,
-  file_name     VARCHAR(255) NOT NULL,
-  file_path     VARCHAR(500) NOT NULL,
-  file_size     BIGINT NOT NULL,
-  mime_type     VARCHAR(100),
-  project_id    BIGINT UNSIGNED,
-  uploaded_by   BIGINT UNSIGNED,
-  is_processed  TINYINT(1) DEFAULT 0,
-  created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_documents_project FOREIGN KEY (project_id) REFERENCES projects(id),
-  CONSTRAINT fk_documents_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id),
-  KEY idx_documents_project_id (project_id),
-  KEY idx_documents_uploaded_by (uploaded_by),
-  KEY idx_documents_processed (is_processed)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- =========================================================
+-- SECTION 6: SYSTEM TABLES
+-- =========================================================
 
-CREATE TABLE IF NOT EXISTS document_versions (
-  id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  document_id       BIGINT UNSIGNED NOT NULL,
-  version_number    INT NOT NULL,
-  file_path         VARCHAR(500) NOT NULL,
-  file_size         BIGINT NOT NULL,
-  change_description TEXT,
-  uploaded_by       BIGINT UNSIGNED,
-  uploaded_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT uq_document_version UNIQUE (document_id, version_number),
-  CONSTRAINT fk_document_versions_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
-  CONSTRAINT fk_document_versions_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id),
-  KEY idx_document_versions_document_id (document_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ai_processing (
-  id                       BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  document_id              BIGINT UNSIGNED NOT NULL,
-  processing_type_id       TINYINT UNSIGNED NOT NULL,
-  status_id                TINYINT UNSIGNED DEFAULT NULL,
-  input_data               JSON,
-  output_data              JSON,
-  extracted_tasks          JSON,
-  summary                  TEXT,
-  confidence_score         DECIMAL(3,2),
-  processing_started_at    DATETIME,
-  processing_completed_at  DATETIME,
-  error_message            TEXT,
-  created_at               TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_ai_processing_document FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE,
-  CONSTRAINT fk_ai_processing_type FOREIGN KEY (processing_type_id) REFERENCES processing_type(id),
-  CONSTRAINT fk_ai_processing_status FOREIGN KEY (status_id) REFERENCES processing_status(id),
-  KEY idx_ai_processing_document_id (document_id),
-  KEY idx_ai_processing_status_id (status_id),
-  KEY idx_ai_processing_type_id (processing_type_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS ai_generated_tasks (
-  id                        BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  ai_processing_id          BIGINT UNSIGNED NOT NULL,
-  suggested_title           VARCHAR(500) NOT NULL,
-  suggested_description     TEXT,
-  suggested_priority_id     TINYINT UNSIGNED,
-  suggested_task_type_id    TINYINT UNSIGNED,
-  suggested_assignee_id     BIGINT UNSIGNED,
-  suggested_due_date        DATETIME,
-  confidence_score          DECIMAL(3,2),
-  is_accepted               TINYINT(1) DEFAULT 0,
-  accepted_by               BIGINT UNSIGNED,
-  accepted_at               DATETIME,
-  created_task_id           BIGINT UNSIGNED,
-  created_at                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_ai_gen_tasks_processing FOREIGN KEY (ai_processing_id) REFERENCES ai_processing(id) ON DELETE CASCADE,
-  CONSTRAINT fk_ai_gen_tasks_priority FOREIGN KEY (suggested_priority_id) REFERENCES task_priority(id),
-  CONSTRAINT fk_ai_gen_tasks_type FOREIGN KEY (suggested_task_type_id) REFERENCES task_type(id),
-  CONSTRAINT fk_ai_gen_tasks_assignee FOREIGN KEY (suggested_assignee_id) REFERENCES users(id),
-  CONSTRAINT fk_ai_gen_tasks_accepted_by FOREIGN KEY (accepted_by) REFERENCES users(id),
-  CONSTRAINT fk_ai_gen_tasks_created_task FOREIGN KEY (created_task_id) REFERENCES tasks(id),
-  KEY idx_ai_generated_tasks_processing_id (ai_processing_id),
-  KEY idx_ai_generated_tasks_accepted (is_accepted)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
+-- User sessions table
 CREATE TABLE IF NOT EXISTS user_sessions (
   id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id         BIGINT UNSIGNED NOT NULL,
@@ -403,6 +547,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
   KEY idx_user_sessions_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Audit logs table
 CREATE TABLE IF NOT EXISTS audit_logs (
   id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id        BIGINT UNSIGNED,
@@ -424,78 +569,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- =========================================================
--- Seed lookup values (idempotent)
+-- Schema creation complete!
+-- Run seed.sql to populate initial data
 -- =========================================================
-
--- Roles
-INSERT INTO roles (role_key, name) VALUES
-  ('project-manager','Project Manager'),
-  ('frontend-developer','Frontend Developer'),
-  ('backend-developer','Backend Developer'),
-  ('fullstack-developer','Full Stack Developer'),
-  ('qa-tester','QA Tester'),
-  ('devops-engineer','DevOps Engineer'),
-  ('ui-ux-designer','UI/UX Designer'),
-  ('data-analyst','Data Analyst'),
-  ('product-manager','Product Manager'),
-  ('scrum-master','Scrum Master'),
-  ('technical-lead','Technical Lead'),
-  ('other','Other')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Project Status
-INSERT INTO project_status (key, name) VALUES
-  ('planning','Planning'),('active','Active'),('on-hold','On Hold'),('completed','Completed'),('cancelled','Cancelled')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Sprint Status
-INSERT INTO sprint_status (key, name) VALUES
-  ('planning','Planning'),('active','Active'),('completed','Completed'),('cancelled','Cancelled')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Task Status
-INSERT INTO task_status (key, name) VALUES
-  ('to-do','To Do'),('in-progress','In Progress'),('waiting-review','Waiting Review'),('testing','Testing'),('done','Done')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Task Priority
-INSERT INTO task_priority (key, name) VALUES
-  ('low','Low'),('medium','Medium'),('high','High')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Task Type
-INSERT INTO task_type (key, name) VALUES
-  ('frontend','Frontend'),('backend','Backend'),('design','Design'),('test','Test'),('devops','DevOps'),('data','Data'),('product','Product')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Dependency Type
-INSERT INTO dependency_type (key, name) VALUES
-  ('blocks','Blocks'),('relates-to','Relates To'),('duplicates','Duplicates')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Event Type
-INSERT INTO event_type (key, name) VALUES
-  ('sprint','Sprint'),('planning','Planning'),('review','Review'),('retrospective','Retrospective'),('task-deadline','Task Deadline'),('meeting','Meeting'),('milestone','Milestone'),('release','Release'),('holiday','Holiday'),('devops','DevOps')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Event Priority
-INSERT INTO event_priority (key, name) VALUES
-  ('low','Low'),('medium','Medium'),('high','High')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Event Status
-INSERT INTO event_status (key, name) VALUES
-  ('upcoming','Upcoming'),('in-progress','In Progress'),('completed','Completed'),('cancelled','Cancelled')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Processing Type
-INSERT INTO processing_type (key, name) VALUES
-  ('text-extraction','Text Extraction'),('task-detection','Task Detection'),('summarization','Summarization'),('classification','Classification'),('sentiment-analysis','Sentiment Analysis')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
--- Processing Status
-INSERT INTO processing_status (key, name) VALUES
-  ('pending','Pending'),('processing','Processing'),('completed','Completed'),('failed','Failed')
-ON DUPLICATE KEY UPDATE name = VALUES(name);
-
 

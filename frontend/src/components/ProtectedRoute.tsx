@@ -17,12 +17,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { currentUser } = useUser();
   const location = useLocation();
 
-  // Check if user is authenticated
   if (!currentUser) {
     return <Navigate to={redirectTo} state={{ from: location }} replace />;
   }
 
-  // Check if user can access the route
   if (!canAccessRoute(currentUser, location.pathname)) {
     return (
       <div className="app-background d-flex flex-column align-items-center justify-content-center min-vh-100 p-4">

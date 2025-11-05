@@ -1,5 +1,5 @@
 import { jwtDecode } from 'jwt-decode';
-import { User, UserRole, getPermissionsForRole } from '../types/permissions';
+import { User, UserRole, getPermissionsForRole } from '../services/userService';
 
 // Simple token interface for demo purposes
 interface TokenPayload {
@@ -40,10 +40,15 @@ export const staticUsers: User[] = [
       canRemoveTeamMembers: true,
       canChangeUserRoles: true,
       canViewAllTeamMembers: true,
+      canCreateProjects: true,
+      canEditProjects: true,
+      canDeleteProjects: true,
+      canViewAllProjects: false,
       canViewProjectOverview: true,
       canEditProjectSettings: true,
       canCreateSprints: true,
       canManageSprints: true,
+      canManageProjectMembers: true,
       canUploadDocuments: true,
       canDeleteDocuments: true,
       canViewAllDocuments: true,
@@ -94,10 +99,15 @@ export const staticUsers: User[] = [
       canRemoveTeamMembers: false,
       canChangeUserRoles: false,
       canViewAllTeamMembers: false,
+      canCreateProjects: false,
+      canEditProjects: false,
+      canDeleteProjects: false,
+      canViewAllProjects: false,
       canViewProjectOverview: false,
       canEditProjectSettings: false,
       canCreateSprints: false,
       canManageSprints: false,
+      canManageProjectMembers: false,
       canUploadDocuments: true,
       canDeleteDocuments: false,
       canViewAllDocuments: false,

@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import AlertModal from '../../components/AlertModal';
 import { useUser } from '../../contexts/UserContext';
-import { getRoles, searchCompanies, registerUser, type RoleDto, type CompanyDto } from '../../services/api';
+import { registerUser } from '../../services/userService';
+import { useRegisterData } from '../../hooks/useRegisterData';
 import type { RegisterFormData } from './types';
 import Step1AccountDetails from './components/Step1AccountDetails';
 import Step2CompanySelection from './components/Step2CompanySelection';
@@ -28,10 +29,6 @@ const RegisterPage: React.FC = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [companySearch, setCompanySearch] = useState('');
-  const [roles, setRoles] = useState<RoleDto[]>([]);
-  const [companies, setCompanies] = useState<CompanyDto[]>([]);
-  const [isLoadingRoles, setIsLoadingRoles] = useState(false);
-  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const navigate = useNavigate();
   const { login } = useUser();
@@ -41,38 +38,26 @@ const RegisterPage: React.FC = () => {
   const [modalMsg, setModalMsg] = useState<React.ReactNode>('');
   const [modalVariant, setModalVariant] = useState<'info' | 'success' | 'error' | 'warning'>('info');
 
+  // Use custom hook to aggregate role and company data
+  const { roles, companies, isLoadingRoles, isLoadingCompanies, searchCompanies: handleSearchCompanies, refetchRoles } = useRegisterData();
+
   useEffect(() => {
     if (step === 3 && roles.length === 0) {
-      setIsLoadingRoles(true);
-      getRoles()
-        .then(data => setRoles(data))
-        .catch(error => {
-          console.error('Error fetching roles:', error);
-          showError('Error loading roles', 'Failed to load roles. Please refresh the page.', 'error');
-        })
-        .finally(() => setIsLoadingRoles(false));
+      refetchRoles();
     }
-  }, [step, roles.length]);
+  }, [step, roles.length, refetchRoles]);
 
   useEffect(() => {
     if (companySearch.trim().length === 0) {
-      setCompanies([]);
       return;
     }
 
     const timeoutId = setTimeout(() => {
-      setIsLoadingCompanies(true);
-      searchCompanies(companySearch)
-        .then(data => setCompanies(data.filter((c) => c.is_active)))
-        .catch(error => {
-          console.error('Error searching companies:', error);
-          setCompanies([]);
-        })
-        .finally(() => setIsLoadingCompanies(false));
+      handleSearchCompanies(companySearch);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [companySearch]);
+  }, [companySearch, handleSearchCompanies]);
 
   const handleInputChange = (field: keyof RegisterFormData, value: string | boolean | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));

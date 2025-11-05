@@ -1,33 +1,14 @@
 import React from 'react';
 import clsx from 'clsx';
 import { useUser } from '../contexts/UserContext';
-
-interface Task {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  dueDate: string;
-  assignees: string[];
-  comments: number;
-  links: number;
-  progress: string;
-  type: string;
-}
-
-interface User {
-  id: string;
-  name: string;
-  avatar: string;
-}
+import type { UITask, UIUser } from '../types/ui';
 
 interface TaskCardProps {
-  task: Task;
+  task: UITask;
   index: number;
-  users: { [key: string]: User };
+  users: { [key: string]: UIUser };
   onDragStart: (e: React.DragEvent, taskId: string) => void;
-  onClick: (task: Task) => void;
+  onClick: (task: UITask) => void;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, index, users, onDragStart, onClick }) => {
@@ -55,7 +36,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index, users, onDragStart, on
     }
   };
 
-  const getAssignees = (): User[] => {
+  const getAssignees = (): UIUser[] => {
     return task.assignees.map(userId => users[userId]).filter(Boolean);
   };
 
@@ -67,7 +48,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, index, users, onDragStart, on
       onClick={() => onClick(task)}
     >
       <h4 className="task-card-title fw-semibold text-dark mb-3">{task.title}</h4>
-      <p className="task-card-description text-secondary small mb-4">{task.description}</p>
+      {task.description && (
+        <p className="task-card-description text-secondary small mb-4" style={{ 
+          overflow: 'hidden', 
+          textOverflow: 'ellipsis', 
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          lineHeight: '1.5'
+        }}>
+          {task.description}
+        </p>
+      )}
       
       <div className="d-flex gap-1 mb-4">
         {getAssignees().map(user => (

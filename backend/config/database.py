@@ -140,9 +140,9 @@ MySQL Enterprise Edition 8.0.44 Connection Notes:
    - Example .env entry:
      MYSQL_HOST=localhost
      MYSQL_PORT=3306
-     MYSQL_USER=taskflow_user
+     MYSQL_USER=smarsprint_user
      MYSQL_PASSWORD=secure_password
-     MYSQL_DATABASE=taskflow
+     MYSQL_DATABASE=smarsprint
      MYSQL_SSL_MODE=REQUIRED
 
 4. **Connection String Format:**

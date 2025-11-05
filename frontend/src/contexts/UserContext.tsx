@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { User, UserRole, getPermissionsForRole } from '../types/permissions';
+import { User, UserRole, getPermissionsForRole } from '../services/userService';
 import { tokenStorage, getUserFromToken, login as authLogin } from '../utils/auth';
 
 interface UserContextType {
@@ -31,14 +31,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing token on mount
   useEffect(() => {
     const initializeAuth = () => {
       const token = tokenStorage.get();
       if (token && tokenStorage.isValid()) {
         const user = getUserFromToken(token);
         if (user) {
-          // Ensure permissions are set
           if (!user.permissions) {
             user.permissions = getPermissionsForRole(user.role);
           }
